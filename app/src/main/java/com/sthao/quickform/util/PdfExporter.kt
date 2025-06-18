@@ -1,0 +1,335 @@
+package com.sthao.quickform.util
+
+import android.content.ContentValues
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.RectF
+import android.graphics.Typeface
+import android.graphics.pdf.PdfDocument
+import android.os.Environment
+import android.provider.MediaStore
+import android.widget.Toast
+import com.sthao.quickform.FormEntry
+import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormImage
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+// Defines common dimensions and styling for the PDF layout.
+private object PdfDimens {
+    const val PAGE_WIDTH = 612
+    const val PAGE_HEIGHT = 792
+    const val MARGIN = 50f
+    const val LINE_SPACING = 20f
+    const val SECTION_SPACING = 35f
+    const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
+
+    // Defines a fixed size for image cells in the grid for a uniform layout.
+    const val IMAGE_GRID_COLUMN_COUNT = 2
+    const val IMAGE_GRID_SPACING = 10f
+    const val IMAGE_CELL_MAX_HEIGHT = 180f
+    const val IMAGE_CELL_WIDTH = (CONTENT_WIDTH - ((IMAGE_GRID_COLUMN_COUNT - 1) * IMAGE_GRID_SPACING)) / IMAGE_GRID_COLUMN_COUNT
+
+    val TITLE_PAINT = Paint().apply { typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD); textSize = 18f; color = Color.BLACK; textAlign = Paint.Align.CENTER }
+    val SECTION_TITLE_PAINT = Paint().apply { typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); textSize = 14f; color = Color.BLACK }
+    val HEADER_PAINT = Paint().apply { typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); textSize = 11f; color = Color.BLACK }
+    val BODY_PAINT = Paint().apply { typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL); textSize = 11f; color = Color.DKGRAY }
+    val MONO_BODY_PAINT = Paint(BODY_PAINT).apply { typeface = Typeface.MONOSPACE }
+}
+
+/**
+ * Exports a list of forms to a single PDF file in the app's cache for sharing.
+ */
+fun exportToPdfForSharing(context: Context, forms: List<FormEntryWithImages>): File? {
+    if (forms.isEmpty()) return null
+
+    val pdfDocument = PdfDocument()
+    return try {
+        val formsWithIds = forms.mapIndexed { index, form -> form to (index + 1).toString() }
+        formsWithIds.forEach { (formWithImages, sequentialId) ->
+            drawFormOnPdf(pdfDocument, formWithImages, sequentialId)
+        }
+
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val fileName = "QuickForm_Export_${timestamp}.pdf"
+        val outputDir = File(context.cacheDir, "shared_pdfs").apply { mkdirs() }
+        val outputFile = File(outputDir, fileName)
+
+        outputFile.outputStream().use { pdfDocument.writeTo(it) }
+        outputFile
+    } catch (e: IOException) {
+        e.printStackTrace()
+        null
+    } finally {
+        pdfDocument.close()
+    }
+}
+
+/**
+ * Exports multiple forms to a single PDF file and saves it to the device's Downloads folder.
+ */
+fun exportMultipleFormsAsPdf(context: Context, formsWithIds: List<Pair<FormEntryWithImages, String>>) {
+    if (formsWithIds.isEmpty()) {
+        Toast.makeText(context, "No entries selected for export.", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val pdfDocument = PdfDocument()
+    try {
+        formsWithIds.forEach { (formWithImages, sequentialId) ->
+            drawFormOnPdf(pdfDocument, formWithImages, sequentialId)
+        }
+
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val fileName = "Exported_Forms_${timestamp}.pdf"
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+        }
+
+        val resolver = context.contentResolver
+        val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+
+        uri?.let {
+            resolver.openOutputStream(it)?.use { outputStream ->
+                pdfDocument.writeTo(outputStream)
+                Toast.makeText(context, "PDF with ${formsWithIds.size} entries saved to Downloads", Toast.LENGTH_LONG).show()
+            }
+        }
+    } catch (e: IOException) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error exporting PDFs: ${e.message}", Toast.LENGTH_LONG).show()
+    } finally {
+        pdfDocument.close()
+    }
+}
+
+/**
+ * A helper class to manage page creation and Y-coordinate positioning within a PdfDocument.
+ */
+private class PdfLayoutManager(private val document: PdfDocument) {
+    private var currentPage: PdfDocument.Page? = null
+    private var canvas: Canvas? = null
+    var yPos = 0f
+        private set
+
+    init {
+        startNewPage()
+    }
+
+    fun startNewPage() {
+        currentPage?.let { document.finishPage(it) }
+        val pageInfo = PdfDocument.PageInfo.Builder(PdfDimens.PAGE_WIDTH, PdfDimens.PAGE_HEIGHT, document.pages.size + 1).create()
+        val newPage = document.startPage(pageInfo)
+        currentPage = newPage
+        canvas = newPage.canvas
+        yPos = PdfDimens.MARGIN
+    }
+
+    fun finishPage() {
+        currentPage?.let { document.finishPage(it); currentPage = null }
+    }
+
+    fun prepareToDraw(spaceNeeded: Float) {
+        if (yPos + spaceNeeded > PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN) {
+            startNewPage()
+        }
+    }
+
+    fun advanceY(space: Float) {
+        yPos += space
+    }
+
+    fun draw(drawCommand: (Canvas) -> Unit) {
+        canvas?.let(drawCommand)
+    }
+}
+
+/**
+ * Main orchestrator function that draws a full form (Pickup and Dropoff sections) onto a PDF.
+ */
+private fun drawFormOnPdf(document: PdfDocument, formWithImages: FormEntryWithImages, sequentialId: String) {
+    val formEntry = formWithImages.formEntry
+    val pickupImages = formWithImages.images.filter { it.imageType == "PICKUP" }
+    val dropoffImages = formWithImages.images.filter { it.imageType == "DROPOFF" }
+
+    // Draws the Pickup section on its own page.
+    val pickupLayoutManager = PdfLayoutManager(document)
+    drawPageHeader(pickupLayoutManager, "Form Entry: ${formEntry.pickupDate ?: "N/A"}-$sequentialId (Pickup)")
+    drawSectionContent(pickupLayoutManager, "Pickup Information", formEntry, pickupImages, isPickup = true)
+    pickupLayoutManager.finishPage()
+
+    // Draws the Dropoff section on its own page.
+    val dropoffLayoutManager = PdfLayoutManager(document)
+    drawPageHeader(dropoffLayoutManager, "Form Entry: ${formEntry.dropoffDate ?: "N/A"}-$sequentialId (Drop-off)")
+    drawSectionContent(dropoffLayoutManager, "Drop-off Information", formEntry, dropoffImages, isPickup = false)
+    dropoffLayoutManager.finishPage()
+}
+
+/**
+ * Draws all content for a given section (Pickup or Dropoff).
+ */
+private fun drawSectionContent(layoutManager: PdfLayoutManager, title: String, form: FormEntry, images: List<FormImage>, isPickup: Boolean) {
+    drawSubHeader(layoutManager, title)
+    drawTwoColumnInfo(layoutManager, form, isPickup)
+    drawItemDetails(layoutManager, form, isPickup)
+    drawSignature(layoutManager, form, isPickup)
+    drawAttachedImages(layoutManager, images)
+}
+
+/**
+ * Draws a centered header at the top of the PDF page.
+ */
+private fun drawPageHeader(layoutManager: PdfLayoutManager, title: String) {
+    layoutManager.prepareToDraw(PdfDimens.SECTION_SPACING * 1.5f)
+    layoutManager.draw { canvas ->
+        canvas.drawText(title, (PdfDimens.MARGIN + PdfDimens.CONTENT_WIDTH + PdfDimens.MARGIN) / 2, layoutManager.yPos, PdfDimens.TITLE_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.SECTION_SPACING * 1.5f)
+}
+
+/**
+ * Draws a left-aligned sub-header for a content section (e.g., "Pickup Information").
+ */
+private fun drawSubHeader(layoutManager: PdfLayoutManager, title: String) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING * 1.5f)
+    layoutManager.draw { canvas ->
+        canvas.drawText(title, PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.SECTION_TITLE_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING * 1.5f)
+}
+
+
+/**
+ * Draws the basic form info (Facility, Driver, Date, Run#) in a two-column layout.
+ */
+private fun drawTwoColumnInfo(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING * 2)
+    val startYForInfo = layoutManager.yPos
+    layoutManager.draw { canvas ->
+        val facility = if (isPickup) form.pickupFacilityName else form.dropoffFacilityName
+        val driverName = if (isPickup) form.pickupDriverName else form.dropoffDriverName
+        val driverNum = if (isPickup) form.pickupDriverNumber else form.dropoffDriverNumber
+        val date = if (isPickup) form.pickupDate else form.dropoffDate
+        val run = if (isPickup) form.pickupRun else form.dropoffRun
+
+        canvas.drawText("Facility:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        canvas.drawText((facility ?: "").ifEmpty { "N/A" }, PdfDimens.MARGIN + 60, layoutManager.yPos, PdfDimens.BODY_PAINT)
+        canvas.drawText("Driver:", PdfDimens.MARGIN, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.HEADER_PAINT)
+        canvas.drawText("${driverName ?: ""} (#${driverNum ?: ""})", PdfDimens.MARGIN + 60, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.BODY_PAINT)
+
+        val col2X = PdfDimens.MARGIN + PdfDimens.CONTENT_WIDTH / 2
+        canvas.drawText("Date:", col2X, startYForInfo, PdfDimens.HEADER_PAINT)
+        canvas.drawText((date ?: "").ifEmpty { "N/A" }, col2X + 50, startYForInfo, PdfDimens.BODY_PAINT)
+        canvas.drawText("Run #:", col2X, startYForInfo + PdfDimens.LINE_SPACING, PdfDimens.HEADER_PAINT)
+        canvas.drawText((run ?: "").ifEmpty { "N/A" }, col2X + 50, startYForInfo + PdfDimens.LINE_SPACING, PdfDimens.BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING * 2 + PdfDimens.SECTION_SPACING)
+}
+
+/**
+ * Draws the table of item quantities.
+ */
+private fun drawItemDetails(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+    layoutManager.draw { canvas -> canvas.drawText("Item Details", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT) }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING)
+
+    val itemsData = if (isPickup) {
+        listOf("Frozen" to (form.pickupFrozenBags to form.pickupFrozenQuantity), "Refrigerated" to (form.pickupRefrigeratedBags to form.pickupRefrigeratedQuantity), "Room Temp" to (form.pickupRoomTempBags to form.pickupRoomTempQuantity), "Other Items" to (form.pickupOthersBags to form.pickupOthersQuantity))
+    } else {
+        listOf("Frozen" to (form.dropoffFrozenBags to form.dropoffFrozenQuantity), "Refrigerated" to (form.dropoffRefrigeratedBags to form.dropoffRefrigeratedQuantity), "Room Temp" to (form.dropoffRoomTempBags to form.dropoffRoomTempQuantity), "Other Items" to (form.dropoffOthersBags to form.dropoffOthersQuantity))
+    }
+    itemsData.forEach { (name, pair) ->
+        layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+        layoutManager.draw { canvas ->
+            val text = "${name.padEnd(15, ' ')} Bags: ${(pair.first ?: "").ifBlank { "0" }.padStart(3)} | Quantity: ${(pair.second ?: "").ifBlank { "0" }.padStart(3)}"
+            canvas.drawText(text, PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.MONO_BODY_PAINT)
+        }
+        layoutManager.advanceY(PdfDimens.LINE_SPACING)
+    }
+
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+    val miscItems = if (isPickup) {
+        "Boxes: ${(form.pickupBoxesQuantity ?: "").ifBlank { "0" }} | Mail: ${(form.pickupMailsQuantity ?: "").ifBlank { "0" }} | Colored Bags: ${(form.pickupColoredBagsQuantity ?: "").ifBlank { "0" }} | Money Bags: ${(form.pickupMoneyBagsQuantity ?: "").ifBlank { "0" }}"
+    } else {
+        "Boxes: ${(form.dropoffBoxesQuantity ?: "").ifBlank { "0" }} | Mail: ${(form.dropoffMailsQuantity ?: "").ifBlank { "0" }} | Colored Bags: ${(form.dropoffColoredBagsQuantity ?: "").ifBlank { "0" }} | Money Bags: ${(form.dropoffMoneyBagsQuantity ?: "").ifBlank { "0" }}"
+    }
+    layoutManager.draw { canvas -> canvas.drawText(miscItems, PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.BODY_PAINT.apply { typeface = Typeface.DEFAULT }) }
+    layoutManager.advanceY(PdfDimens.SECTION_SPACING)
+}
+
+/**
+ * Draws the printed name and signature bitmap onto the PDF.
+ */
+private fun drawSignature(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
+    val signatureByteArray = if (isPickup) form.pickupSignature else form.dropoffSignature
+    val printedName = if (isPickup) form.pickupPrintSignature else form.dropoffPrintSignature
+    val signatureBoxWidth = PdfDimens.CONTENT_WIDTH / 2.5f
+    val signatureBoxHeight = 60f
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING + signatureBoxHeight + (PdfDimens.LINE_SPACING * 2))
+
+    layoutManager.draw { it.drawText("Print Name:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT) }
+    layoutManager.draw { it.drawText((printedName ?: "").ifEmpty { "N/A" }, PdfDimens.MARGIN + 80, layoutManager.yPos, PdfDimens.BODY_PAINT) }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING)
+
+    val signatureRect = RectF(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos + signatureBoxHeight)
+    byteArrayToBitmap(signatureByteArray ?: byteArrayOf())?.let { signatureBitmap ->
+        layoutManager.draw { it.drawBitmap(signatureBitmap, null, signatureRect, null) }
+    }
+    layoutManager.advanceY(signatureBoxHeight)
+
+    layoutManager.draw{ canvas ->
+        canvas.drawLine(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos, PdfDimens.BODY_PAINT)
+        canvas.drawText("Signature", PdfDimens.MARGIN, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.HEADER_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING * 2)
+}
+
+/**
+ * Draws all attached images in a uniform, two-column grid with a fixed cell height.
+ */
+private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<FormImage>) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+    layoutManager.draw { canvas ->
+        canvas.drawText("Attached Images:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        if (images.isEmpty()) {
+            canvas.drawText("N/A", PdfDimens.MARGIN + 110, layoutManager.yPos, PdfDimens.BODY_PAINT)
+        }
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING)
+
+    if (images.isNotEmpty()) {
+        images.chunked(PdfDimens.IMAGE_GRID_COLUMN_COUNT).forEach { rowImages ->
+            // Check if a row of fixed-height cells will fit on the current page.
+            layoutManager.prepareToDraw(PdfDimens.IMAGE_CELL_MAX_HEIGHT)
+
+            rowImages.forEachIndexed { index, formImage ->
+                byteArrayToBitmap(formImage.imageData)?.let { bmp ->
+                    val xPos = PdfDimens.MARGIN + (index * (PdfDimens.IMAGE_CELL_WIDTH + PdfDimens.IMAGE_GRID_SPACING))
+
+                    // Define the fixed-size destination box for the image.
+                    val destRect = RectF(xPos, layoutManager.yPos, xPos + PdfDimens.IMAGE_CELL_WIDTH, layoutManager.yPos + PdfDimens.IMAGE_CELL_MAX_HEIGHT)
+                    val srcRect = RectF(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat())
+
+                    // Create a matrix to scale and center the image within the destination rect without distortion.
+                    val matrix = Matrix()
+                    matrix.setRectToRect(srcRect, destRect, Matrix.ScaleToFit.CENTER)
+
+                    layoutManager.draw { it.drawBitmap(bmp, matrix, null) }
+                }
+            }
+            // Advance the Y position by the fixed height of the row.
+            layoutManager.advanceY(PdfDimens.IMAGE_CELL_MAX_HEIGHT + PdfDimens.LINE_SPACING)
+        }
+    }
+    layoutManager.advanceY(PdfDimens.SECTION_SPACING)
+}
