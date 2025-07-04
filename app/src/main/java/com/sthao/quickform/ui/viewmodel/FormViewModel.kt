@@ -111,7 +111,11 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         // REFACTOR: The 'when' block now updates the specific state flow, which is more efficient.
         when(event) {
             // Pickup Events
-            is FormEvent.UpdatePickupRun -> _pickupState.update { it.copy(run = event.value) }
+            is FormEvent.UpdatePickupRun -> {
+                // When Pickup run# is updated, sync it to the Dropoff state as well.
+                _pickupState.update { it.copy(run = event.value) }
+                _dropoffState.update { it.copy(run = event.value) }
+            }
             is FormEvent.UpdatePickupDate -> _pickupState.update { it.copy(date = event.value) }
             is FormEvent.UpdatePickupDriverName -> _pickupState.update { it.copy(driverName = event.value) }
             is FormEvent.UpdatePickupDriverNumber -> _pickupState.update { it.copy(driverNumber = event.value) }
@@ -135,7 +139,11 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             is FormEvent.RemovePickupImage -> _pickupState.update { it.copy(images = it.images - event.uri) }
 
             // Dropoff Events
-            is FormEvent.UpdateDropoffRun -> _dropoffState.update { it.copy(run = event.value) }
+            is FormEvent.UpdateDropoffRun -> {
+                // When Dropoff run# is updated, sync it to the Pickup state as well.
+                _dropoffState.update { it.copy(run = event.value) }
+                _pickupState.update { it.copy(run = event.value) }
+            }
             is FormEvent.UpdateDropoffDate -> _dropoffState.update { it.copy(date = event.value) }
             is FormEvent.UpdateDropoffDriverName -> _dropoffState.update { it.copy(driverName = event.value) }
             is FormEvent.UpdateDropoffDriverNumber -> _dropoffState.update { it.copy(driverNumber = event.value) }
