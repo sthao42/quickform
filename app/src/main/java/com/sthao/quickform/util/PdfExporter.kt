@@ -20,6 +20,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.min
 
 // Defines common dimensions and styling for the PDF layout.
 private object PdfDimens {
@@ -30,11 +31,11 @@ private object PdfDimens {
     const val SECTION_SPACING = 35f
     const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
 
-    // Defines a fixed size for image cells in the grid for a uniform layout.
-    const val IMAGE_GRID_COLUMN_COUNT = 2
-    const val IMAGE_GRID_SPACING = 10f
-    const val IMAGE_CELL_MAX_HEIGHT = 180f
-    const val IMAGE_CELL_WIDTH = (CONTENT_WIDTH - ((IMAGE_GRID_COLUMN_COUNT - 1) * IMAGE_GRID_SPACING)) / IMAGE_GRID_COLUMN_COUNT
+    // Defines the width for the single-column image layout.
+    const val IMAGE_MAX_WIDTH = CONTENT_WIDTH
+    // Defines a maximum height for images to prevent them from filling the whole page.
+    const val IMAGE_MAX_HEIGHT = 400f
+
 
     val TITLE_PAINT = Paint().apply { typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD); textSize = 18f; color = Color.BLACK; textAlign = Paint.Align.CENTER }
     val SECTION_TITLE_PAINT = Paint().apply { typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD); textSize = 14f; color = Color.BLACK }
@@ -295,7 +296,8 @@ private fun drawSignature(layoutManager: PdfLayoutManager, form: FormEntry, isPi
 }
 
 /**
- * Draws all attached images in a uniform, two-column grid with a fixed cell height.
+ * Draws all attached images in a single column, scaled to fit the page width while
+ * constraining their height to prevent a single image from filling the page.
  */
 private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<FormImage>) {
     layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
@@ -308,27 +310,30 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
     layoutManager.advanceY(PdfDimens.LINE_SPACING)
 
     if (images.isNotEmpty()) {
-        images.chunked(PdfDimens.IMAGE_GRID_COLUMN_COUNT).forEach { rowImages ->
-            // Check if a row of fixed-height cells will fit on the current page.
-            layoutManager.prepareToDraw(PdfDimens.IMAGE_CELL_MAX_HEIGHT)
+        images.forEach { formImage ->
+            byteArrayToBitmap(formImage.imageData)?.let { bmp ->
+                // Determine the best scale to fit the image within our constraints.
+                val widthScale = PdfDimens.IMAGE_MAX_WIDTH / bmp.width.toFloat()
+                val heightScale = if (bmp.height > PdfDimens.IMAGE_MAX_HEIGHT) PdfDimens.IMAGE_MAX_HEIGHT / bmp.height.toFloat() else 1.0f
+                val scale = min(widthScale, heightScale) // Use the smaller scale to fit both constraints
 
-            rowImages.forEachIndexed { index, formImage ->
-                byteArrayToBitmap(formImage.imageData)?.let { bmp ->
-                    val xPos = PdfDimens.MARGIN + (index * (PdfDimens.IMAGE_CELL_WIDTH + PdfDimens.IMAGE_GRID_SPACING))
+                val scaledWidth = bmp.width * scale
+                val scaledHeight = bmp.height * scale
 
-                    // Define the fixed-size destination box for the image.
-                    val destRect = RectF(xPos, layoutManager.yPos, xPos + PdfDimens.IMAGE_CELL_WIDTH, layoutManager.yPos + PdfDimens.IMAGE_CELL_MAX_HEIGHT)
-                    val srcRect = RectF(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat())
+                // Check if this scaled image will fit on the current page. If not, start a new one.
+                layoutManager.prepareToDraw(scaledHeight)
 
-                    // Create a matrix to scale and center the image within the destination rect without distortion.
-                    val matrix = Matrix()
-                    matrix.setRectToRect(srcRect, destRect, Matrix.ScaleToFit.CENTER)
+                // Center the image horizontally on the page
+                val xPos = PdfDimens.MARGIN + (PdfDimens.CONTENT_WIDTH - scaledWidth) / 2
+                val destRect = RectF(xPos, layoutManager.yPos, xPos + scaledWidth, layoutManager.yPos + scaledHeight)
 
-                    layoutManager.draw { it.drawBitmap(bmp, matrix, null) }
+                layoutManager.draw { canvas ->
+                    canvas.drawBitmap(bmp, null, destRect, null)
                 }
+
+                // Advance the Y position for the next element.
+                layoutManager.advanceY(scaledHeight + PdfDimens.LINE_SPACING)
             }
-            // Advance the Y position by the fixed height of the row.
-            layoutManager.advanceY(PdfDimens.IMAGE_CELL_MAX_HEIGHT + PdfDimens.LINE_SPACING)
         }
     }
     layoutManager.advanceY(PdfDimens.SECTION_SPACING)
