@@ -297,7 +297,6 @@ private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry
         )
     }
 
-    // --- LAYOUT CHANGE ---
     // Values are now drawn at a fixed X-position for vertical alignment.
     val valueXPos = PdfDimens.MARGIN + 100f
     miscItems.forEach { (label, value) ->
@@ -370,14 +369,30 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
     if (images.isNotEmpty()) {
         images.forEach { formImage ->
             byteArrayToBitmap(formImage.imageData)?.let { bmp ->
-                val widthScale = PdfDimens.IMAGE_MAX_WIDTH / bmp.width.toFloat()
-                val heightScale = if (bmp.height > PdfDimens.IMAGE_MAX_HEIGHT) PdfDimens.IMAGE_MAX_HEIGHT / bmp.height.toFloat() else 1.0f
+                // Calculate scale to fit width, but don't upscale if image is smaller
+                val widthScale = if (bmp.width > PdfDimens.IMAGE_MAX_WIDTH) {
+                    PdfDimens.IMAGE_MAX_WIDTH / bmp.width.toFloat()
+                } else {
+                    1.0f // Don't upscale if image is smaller than max width
+                }
+                
+                // Calculate scale to fit height, but don't upscale if image is smaller
+                val heightScale = if (bmp.height > PdfDimens.IMAGE_MAX_HEIGHT) {
+                    PdfDimens.IMAGE_MAX_HEIGHT / bmp.height.toFloat()
+                } else {
+                    1.0f // Don't upscale if image is smaller than max height
+                }
+                
+                // Use the smaller scale to ensure image fits both dimensions
                 val scale = min(widthScale, heightScale)
 
                 val scaledWidth = bmp.width * scale
                 val scaledHeight = bmp.height * scale
 
-                layoutManager.prepareToDraw(scaledHeight)
+                // Check if we need to start a new page for this image
+                if (layoutManager.yPos + scaledHeight > PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN) {
+                    layoutManager.startNewPage()
+                }
 
                 val xPos = PdfDimens.MARGIN + (PdfDimens.CONTENT_WIDTH - scaledWidth) / 2
                 val destRect = RectF(xPos, layoutManager.yPos, xPos + scaledWidth, layoutManager.yPos + scaledHeight)
@@ -385,7 +400,9 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
                 layoutManager.draw { canvas ->
                     canvas.drawBitmap(bmp, null, destRect, null)
                 }
-                layoutManager.advanceY(scaledHeight + PdfDimens.LINE_SPACING)
+                
+                // Add spacing between images (using section spacing for better visual separation)
+                layoutManager.advanceY(scaledHeight + PdfDimens.SECTION_SPACING / 2)
             }
         }
     }
