@@ -1,14 +1,23 @@
-*.iml
-.idea
-.gradle
-.kotlin
-.vscode
+# OS
 .DS_Store
-/local.properties
-/.idea
-/app/build/
-/app/release/
-build/
-.externalNativeBuild
-.cxx
+
+# Local configuration
 local.properties
+
+# Gradle cache and build outputs
+.gradle/
+build/
+
+# Android build outputs
+*.apk
+*.aab
+*.ap_
+
+# IDE files
+*.iml
+.idea/
+.kotlin/
+.vscode/
+
+# Log files
+*.log
