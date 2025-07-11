@@ -127,15 +127,6 @@ fun DropoffScreen(
 
                 // A series of text fields for user input.
                 OutlinedTextField(
-                    value = state.run,
-                    onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, it)) },
-                    label = { Text("Run #") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
                     value = state.driverName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.DRIVER_NAME, it)) },
                     label = { Text("Driver Name") },
@@ -150,6 +141,15 @@ fun DropoffScreen(
                     modifier = Modifier.fillMaxWidth(),
                     colors = customTextFieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.run,
+                    onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, it)) },
+                    label = { Text("Run #") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = customTextFieldColors,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
