@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.sthao.quickform.util.Constants.DATABASE_NAME
 
-@Database(entities = [FormEntry::class, FormImage::class], version = 7, exportSchema = false)
+@Database(entities = [FormEntry::class, FormImage::class], version = 8, exportSchema = false)
 abstract class FormDatabase : RoomDatabase() {
 
     abstract fun formDao(): FormDao
@@ -48,6 +48,13 @@ abstract class FormDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN pickupAdditionalNotes TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN dropoffAdditionalNotes TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): FormDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -55,7 +62,7 @@ abstract class FormDatabase : RoomDatabase() {
                     FormDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .build()
                 INSTANCE = instance
                 instance

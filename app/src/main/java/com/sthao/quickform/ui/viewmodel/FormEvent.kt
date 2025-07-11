@@ -10,7 +10,7 @@ import com.sthao.quickform.FormEntryWithImages
  */
 enum class FormFieldType {
     // Basic info fields
-    RUN, DATE, DRIVER_NAME, DRIVER_NUMBER, FACILITY_NAME, NOTES,
+    RUN, DATE, DRIVER_NAME, DRIVER_NUMBER, FACILITY_NAME, NOTES, ADDITIONAL_NOTES,
     
     // Quantity fields
     FROZEN_BAGS, FROZEN_QUANTITY,

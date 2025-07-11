@@ -41,6 +41,7 @@ data class FormEntry(
     val pickupMoneyBagsQuantity: String?,
     val pickupOthersQuantity: String?,
     val pickupNotes: String?,
+    val pickupAdditionalNotes: String?,
     val pickupPrintSignatureOne: String?,
     val pickupPrintSignatureTwo: String?,
     val pickupSignatureOne: ByteArray?, // Stored as BLOB
@@ -64,6 +65,7 @@ data class FormEntry(
     val dropoffMoneyBagsQuantity: String?,
     val dropoffOthersQuantity: String?,
     val dropoffNotes: String?,
+    val dropoffAdditionalNotes: String?,
     val dropoffPrintSignatureOne: String?,
     val dropoffPrintSignatureTwo: String?,
     val dropoffSignatureOne: ByteArray?, // Stored as BLOB
@@ -95,6 +97,7 @@ data class FormEntry(
         if (pickupMoneyBagsQuantity != other.pickupMoneyBagsQuantity) return false
         if (pickupOthersQuantity != other.pickupOthersQuantity) return false
         if (pickupNotes != other.pickupNotes) return false
+        if (pickupAdditionalNotes != other.pickupAdditionalNotes) return false
         if (pickupPrintSignatureOne != other.pickupPrintSignatureOne) return false
         if (pickupPrintSignatureTwo != other.pickupPrintSignatureTwo) return false
         if (pickupSignatureOne != null) {
@@ -122,6 +125,7 @@ data class FormEntry(
         if (dropoffMoneyBagsQuantity != other.dropoffMoneyBagsQuantity) return false
         if (dropoffOthersQuantity != other.dropoffOthersQuantity) return false
         if (dropoffNotes != other.dropoffNotes) return false
+        if (dropoffAdditionalNotes != other.dropoffAdditionalNotes) return false
         if (dropoffPrintSignatureOne != other.dropoffPrintSignatureOne) return false
         if (dropoffPrintSignatureTwo != other.dropoffPrintSignatureTwo) return false
         if (dropoffSignatureOne != null) {
@@ -156,6 +160,7 @@ data class FormEntry(
         result = 31 * result + (pickupMoneyBagsQuantity?.hashCode() ?: 0)
         result = 31 * result + (pickupOthersQuantity?.hashCode() ?: 0)
         result = 31 * result + (pickupNotes?.hashCode() ?: 0)
+        result = 31 * result + (pickupAdditionalNotes?.hashCode() ?: 0)
         result = 31 * result + (pickupPrintSignatureOne?.hashCode() ?: 0)
         result = 31 * result + (pickupPrintSignatureTwo?.hashCode() ?: 0)
         result = 31 * result + (pickupSignatureOne?.contentHashCode() ?: 0)
@@ -177,6 +182,7 @@ data class FormEntry(
         result = 31 * result + (dropoffMoneyBagsQuantity?.hashCode() ?: 0)
         result = 31 * result + (dropoffOthersQuantity?.hashCode() ?: 0)
         result = 31 * result + (dropoffNotes?.hashCode() ?: 0)
+        result = 31 * result + (dropoffAdditionalNotes?.hashCode() ?: 0)
         result = 31 * result + (dropoffPrintSignatureOne?.hashCode() ?: 0)
         result = 31 * result + (dropoffPrintSignatureTwo?.hashCode() ?: 0)
         result = 31 * result + (dropoffSignatureOne?.contentHashCode() ?: 0)

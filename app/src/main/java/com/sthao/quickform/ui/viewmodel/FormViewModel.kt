@@ -60,6 +60,7 @@ data class PickupUiState(
     val moneyBagsQuantity: String = "",
     val othersQuantity: String = "",
     val notes: String = "",
+    val additionalNotes: String = "",
     val printSignatureOne: String = "",
     val printSignatureTwo: String = "",
     val signatureOne: Bitmap? = null,
@@ -87,6 +88,7 @@ data class DropoffUiState(
     val moneyBagsQuantity: String = "",
     val othersQuantity: String = "",
     val notes: String = "",
+    val additionalNotes: String = "",
     val printSignatureOne: String = "",
     val printSignatureTwo: String = "",
     val signatureOne: Bitmap? = null,
@@ -176,6 +178,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             FormFieldType.MONEY_BAGS_QUANTITY -> pickupState.copy(moneyBagsQuantity = value)
             FormFieldType.OTHERS_QUANTITY -> pickupState.copy(othersQuantity = value)
             FormFieldType.NOTES -> pickupState.copy(notes = value)
+            FormFieldType.ADDITIONAL_NOTES -> pickupState.copy(additionalNotes = value)
             FormFieldType.PRINT_SIGNATURE_ONE -> pickupState.copy(printSignatureOne = value)
             FormFieldType.PRINT_SIGNATURE_TWO -> pickupState.copy(printSignatureTwo = value)
         }
@@ -201,6 +204,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             FormFieldType.MONEY_BAGS_QUANTITY -> dropoffState.copy(moneyBagsQuantity = value)
             FormFieldType.OTHERS_QUANTITY -> dropoffState.copy(othersQuantity = value)
             FormFieldType.NOTES -> dropoffState.copy(notes = value)
+            FormFieldType.ADDITIONAL_NOTES -> dropoffState.copy(additionalNotes = value)
             FormFieldType.PRINT_SIGNATURE_ONE -> dropoffState.copy(printSignatureOne = value)
             FormFieldType.PRINT_SIGNATURE_TWO -> dropoffState.copy(printSignatureTwo = value)
         }
@@ -256,6 +260,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             pickupMoneyBagsQuantity = currentPickupState.moneyBagsQuantity,
             pickupOthersQuantity = currentPickupState.othersQuantity,
             pickupNotes = currentPickupState.notes,
+            pickupAdditionalNotes = currentPickupState.additionalNotes,
             pickupPrintSignatureOne = currentPickupState.printSignatureOne,
             pickupPrintSignatureTwo = currentPickupState.printSignatureTwo,
             pickupSignatureOne = pickupSignatureOneBytes,
@@ -277,6 +282,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             dropoffMoneyBagsQuantity = currentDropoffState.moneyBagsQuantity,
             dropoffOthersQuantity = currentDropoffState.othersQuantity,
             dropoffNotes = currentDropoffState.notes,
+            dropoffAdditionalNotes = currentDropoffState.additionalNotes,
             dropoffPrintSignatureOne = currentDropoffState.printSignatureOne,
             dropoffPrintSignatureTwo = currentDropoffState.printSignatureTwo,
             dropoffSignatureOne = dropoffSignatureOneBytes,
@@ -339,6 +345,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             moneyBagsQuantity = form.pickupMoneyBagsQuantity ?: "",
             othersQuantity = form.pickupOthersQuantity ?: "",
             notes = form.pickupNotes ?: "",
+            additionalNotes = form.pickupAdditionalNotes ?: "",
             printSignatureOne = form.pickupPrintSignatureOne ?: "",
             printSignatureTwo = form.pickupPrintSignatureTwo ?: "",
             signatureOne = pickupSignatureOneBitmap,
@@ -364,6 +371,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             moneyBagsQuantity = form.dropoffMoneyBagsQuantity ?: "",
             othersQuantity = form.dropoffOthersQuantity ?: "",
             notes = form.dropoffNotes ?: "",
+            additionalNotes = form.dropoffAdditionalNotes ?: "",
             printSignatureOne = form.dropoffPrintSignatureOne ?: "",
             printSignatureTwo = form.dropoffPrintSignatureTwo ?: "",
             signatureOne = dropoffSignatureOneBitmap,
