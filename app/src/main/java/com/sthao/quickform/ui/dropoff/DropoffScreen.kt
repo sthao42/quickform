@@ -2,7 +2,6 @@ package com.sthao.quickform.ui.dropoff
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -55,6 +55,8 @@ fun DropoffScreen(
     state: DropoffUiState,
     onEvent: (FormEvent) -> Unit,
     customTextFieldColors: TextFieldColors,
+    runNumber: String,
+    onRunNumberChange: (String) -> Unit,
 ) {
     // Manages the visibility state of the date picker dialog.
     var dateDialogOpen by remember { mutableStateOf(false) }
@@ -140,12 +142,12 @@ fun DropoffScreen(
                     label = { Text("Driver Number") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = customTextFieldColors,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = state.run,
-                    onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, it)) },
+                    value = runNumber,
+                    onValueChange = { if (it.all(Char::isDigit)) onRunNumberChange(it) },
                     label = { Text("Run #") },
                     modifier = Modifier.fillMaxWidth(),
                     colors = customTextFieldColors,

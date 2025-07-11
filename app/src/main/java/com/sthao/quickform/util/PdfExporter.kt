@@ -198,8 +198,8 @@ private fun drawSectionContent(layoutManager: PdfLayoutManager, title: String, f
     drawSignature(layoutManager, form, isPickup, signatureIndex = 1)
     drawMiscItemDetails(layoutManager, form, isPickup)
     drawAdditionalNotes(layoutManager, form, isPickup)
-    drawAttachedImages(layoutManager, images)
     drawSignature(layoutManager, form, isPickup, signatureIndex = 2)
+    drawAttachedImages(layoutManager, images)
 }
 
 /**

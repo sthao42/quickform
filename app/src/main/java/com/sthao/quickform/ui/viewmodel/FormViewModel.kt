@@ -43,10 +43,10 @@ import java.util.Locale
 // Represents the state for the Pickup screen.
 @Immutable
 data class PickupUiState(
-    val run: String = "",
     val date: String = SimpleDateFormat(DATE_FORMAT_DISPLAY, Locale.getDefault()).format(Date()),
     val driverName: String = "",
     val driverNumber: String = "",
+    val run: String = "",
     val facilityName: String = "",
     val frozenBags: String = "",
     val frozenQuantity: String = "",
@@ -71,10 +71,10 @@ data class PickupUiState(
 // Represents the state for the Dropoff screen.
 @Immutable
 data class DropoffUiState(
-    val run: String = "",
     val date: String = SimpleDateFormat(DATE_FORMAT_DISPLAY, Locale.getDefault()).format(Date()),
     val driverName: String = "",
     val driverNumber: String = "",
+    val run: String = "",
     val facilityName: String = "",
     val frozenBags: String = "",
     val frozenQuantity: String = "",

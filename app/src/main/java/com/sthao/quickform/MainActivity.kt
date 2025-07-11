@@ -30,6 +30,8 @@ import com.sthao.quickform.ui.pickup.PickupScreen
 import com.sthao.quickform.ui.saved.SavedFormsScreen
 import com.sthao.quickform.ui.theme.QuickFormTheme
 import com.sthao.quickform.ui.viewmodel.FormEvent
+import com.sthao.quickform.ui.viewmodel.FormFieldType
+import com.sthao.quickform.ui.viewmodel.FormSection
 import com.sthao.quickform.ui.viewmodel.FormViewModel
 import com.sthao.quickform.ui.viewmodel.FormViewModelFactory
 import kotlinx.coroutines.launch
@@ -109,6 +111,11 @@ class MainActivity : ComponentActivity() {
                                             state = pickupState,
                                             onEvent = formViewModel::onEvent,
                                             customTextFieldColors = customTextFieldColors,
+                                            runNumber = pickupState.run,
+                                            onRunNumberChange = { newRun ->
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                            }
                                         )
                                     }
                                 1 ->
@@ -117,6 +124,11 @@ class MainActivity : ComponentActivity() {
                                             state = dropoffState,
                                             onEvent = formViewModel::onEvent,
                                             customTextFieldColors = customTextFieldColors,
+                                            runNumber = dropoffState.run,
+                                            onRunNumberChange = { newRun ->
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                            }
                                         )
                                     }
                                 2 ->
