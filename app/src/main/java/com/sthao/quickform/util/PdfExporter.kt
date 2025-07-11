@@ -194,11 +194,12 @@ private fun drawSectionContent(layoutManager: PdfLayoutManager, title: String, f
     drawSubHeader(layoutManager, title)
     drawTwoColumnInfo(layoutManager, form, isPickup)
     drawItemDetails(layoutManager, form, isPickup)
+    drawNotes(layoutManager, form, isPickup)
     drawSignature(layoutManager, form, isPickup, signatureIndex = 1)
     drawMiscItemDetails(layoutManager, form, isPickup)
-    // The second signature is now drawn before the attached images.
-    drawSignature(layoutManager, form, isPickup, signatureIndex = 2)
+    drawAdditionalNotes(layoutManager, form, isPickup)
     drawAttachedImages(layoutManager, images)
+    drawSignature(layoutManager, form, isPickup, signatureIndex = 2)
 }
 
 /**
@@ -276,6 +277,21 @@ private fun drawItemDetails(layoutManager: PdfLayoutManager, form: FormEntry, is
 }
 
 /**
+ * Draws the main notes field.
+ */
+private fun drawNotes(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
+    // NOTE: Assumes 'pickupNotes' and 'dropoffNotes' exist on FormEntry
+    val notes = if (isPickup) form.pickupNotes else form.dropoffNotes
+
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
+    layoutManager.draw { canvas ->
+        canvas.drawText("Notes:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        canvas.drawText((notes ?: "").ifEmpty { DEFAULT_EMPTY_VALUE }, PdfDimens.MARGIN + 60, layoutManager.yPos, PdfDimens.BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
+}
+
+/**
  * Draws the miscellaneous item quantities, each on its own line with aligned values.
  */
 private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
@@ -310,6 +326,21 @@ private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry
         layoutManager.advanceY(PdfDimens.LINE_SPACING)
     }
     layoutManager.advanceY(PdfDimens.SECTION_SPACING)
+}
+
+/**
+ * Draws the additional notes field.
+ */
+private fun drawAdditionalNotes(layoutManager: PdfLayoutManager, form: FormEntry, isPickup: Boolean) {
+    // NOTE: Assumes 'pickupAdditionalNotes' and 'dropoffAdditionalNotes' exist on FormEntry
+    val additionalNotes = if (isPickup) form.pickupAdditionalNotes else form.dropoffAdditionalNotes
+
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
+    layoutManager.draw { canvas ->
+        canvas.drawText("Additional Notes:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        canvas.drawText((additionalNotes ?: "").ifEmpty { DEFAULT_EMPTY_VALUE }, PdfDimens.MARGIN + 120, layoutManager.yPos, PdfDimens.BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
 }
 
 
@@ -375,14 +406,14 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
                 } else {
                     1.0f // Don't upscale if image is smaller than max width
                 }
-                
+
                 // Calculate scale to fit height, but don't upscale if image is smaller
                 val heightScale = if (bmp.height > PdfDimens.IMAGE_MAX_HEIGHT) {
                     PdfDimens.IMAGE_MAX_HEIGHT / bmp.height.toFloat()
                 } else {
                     1.0f // Don't upscale if image is smaller than max height
                 }
-                
+
                 // Use the smaller scale to ensure image fits both dimensions
                 val scale = min(widthScale, heightScale)
 
@@ -400,7 +431,7 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
                 layoutManager.draw { canvas ->
                     canvas.drawBitmap(bmp, null, destRect, null)
                 }
-                
+
                 // Add spacing between images (using section spacing for better visual separation)
                 layoutManager.advanceY(scaledHeight + PdfDimens.SECTION_SPACING / 2)
             }
