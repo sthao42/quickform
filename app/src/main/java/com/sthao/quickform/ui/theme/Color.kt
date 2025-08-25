@@ -17,6 +17,7 @@ val FabColorView = Color(0xFF0AAD9F)
 // Form colors
 val PickupForm = Color(0xFF8CC989)
 val DropOffForm = Color(0xFFEA9794)
+val StationsForm = Color(0xFFADD8E6)
 val SavedForms = Color(0xFFFDF2CD)
 val FormsSelected = Color(0xFFCCC4EE)
 val DarkGray50 = Color(0xFF5D5D5D)

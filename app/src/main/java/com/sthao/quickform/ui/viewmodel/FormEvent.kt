@@ -3,7 +3,8 @@ package com.sthao.quickform.ui.viewmodel
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
-import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormEntryWithImagesAndSections
+import com.sthao.quickform.ui.stations.StationsItemSection
 
 /**
  * Enum representing different form field types for more type-safe field updates.
@@ -18,21 +19,21 @@ enum class FormFieldType {
     ROOM_TEMP_BAGS, ROOM_TEMP_QUANTITY,
     BOXES_QUANTITY, COLORED_BAGS_QUANTITY,
     MAILS_QUANTITY, MONEY_BAGS_QUANTITY, OTHERS_QUANTITY,
+    TOTES, ADD_ONS, EXTRA,
     
     // Signature fields
-    PRINT_SIGNATURE_ONE, PRINT_SIGNATURE_TWO
+    PRINT_SIGNATURE_ONE, PRINT_SIGNATURE_TWO,
 }
 
 /**
  * Enum representing form sections (pickup vs dropoff).
  */
 enum class FormSection {
-    PICKUP, DROPOFF
+    PICKUP, DROPOFF, STATIONS // Added STATIONS
 }
 
 /**
  * All possible events that can happen in the form UI.
- * Refactored for better type safety and reduced boilerplate.
  */
 sealed class FormEvent {
     
@@ -59,9 +60,20 @@ sealed class FormEvent {
         val uri: Uri
     ) : FormEvent()
 
+    data class UpdateStationsItemSection(
+        val index: Int,
+        val itemSection: StationsItemSection
+    ) : FormEvent()
+    
+    data object AddStationsItemSection : FormEvent()
+    
+    data class RemoveStationsItemSections(
+        val indices: List<Int>
+    ) : FormEvent()
 
     // Form Actions
-    data class LoadForm(val formWithImages: FormEntryWithImages) : FormEvent()
+    data class LoadForm(val formWithImages: FormEntryWithImagesAndSections) : FormEvent()
+    data class LoadFormWithSections(val formId: Long) : FormEvent()
     data object ClearForm : FormEvent()
     data class SaveOrUpdateForm(val context: Context) : FormEvent()
     data class DeleteFormsByIds(val ids: Set<Long>) : FormEvent()

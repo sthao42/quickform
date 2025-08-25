@@ -57,6 +57,7 @@ object Constants {
     // Image types
     const val IMAGE_TYPE_PICKUP = "PICKUP"
     const val IMAGE_TYPE_DROPOFF = "DROPOFF"
+    const val IMAGE_TYPE_STATIONS = "STATIONS" // Added for Stations
     
     // File extensions
     const val PNG_EXTENSION = ".png"

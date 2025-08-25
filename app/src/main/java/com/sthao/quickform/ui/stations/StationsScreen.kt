@@ -2,7 +2,10 @@ package com.sthao.quickform.ui.stations
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import android.net.Uri
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -31,7 +34,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,6 +46,7 @@ import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
 import com.sthao.quickform.ui.viewmodel.FormSection
 import com.sthao.quickform.ui.viewmodel.StationsUiState
+import com.sthao.quickform.ui.components.MultiImagePicker
 import com.sthao.quickform.ui.components.SignatureBox
 import com.sthao.quickform.ui.theme.stationsForm
 import java.text.SimpleDateFormat
@@ -54,10 +57,12 @@ import java.util.Locale
 @Composable
 fun StationsScreen(
     stationsState: StationsUiState,
+    stationsItemSections: List<StationsItemSection>,
     onEvent: (FormEvent) -> Unit,
     customTextFieldColors: TextFieldColors,
-    runNumber: String,
-    onRunNumberChange: (String) -> Unit,
+    onUpdateItemSection: (Int, StationsItemSection) -> Unit,
+    onAddItemSection: () -> Unit,
+    onRemoveItemSections: (List<Int>) -> Unit,
 ) {
     // Manages the visibility state of the date picker dialog.
     var dateDialogOpen by remember { mutableStateOf(false) }
@@ -65,7 +70,7 @@ fun StationsScreen(
     val dateFormat = remember { SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault()) }
     
     // Manage item sections
-    var itemSections = remember { mutableStateListOf(StationsItemSection()) }
+    val itemSections = remember { mutableStateListOf(StationsItemSection()) }
     
     // Manage selected sections for deletion
     var selectedSections by remember { mutableStateOf(setOf<Int>()) }
@@ -99,8 +104,8 @@ fun StationsScreen(
             val isPressed by interactionSource.collectIsPressedAsState()
 
             // Opens the date dialog when the text field is pressed.
-            if (isPressed) {
-                LaunchedEffect(Unit) {
+            LaunchedEffect(isPressed) {
+                if (isPressed) {
                     dateDialogOpen = true
                 }
             }
@@ -158,15 +163,6 @@ fun StationsScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = stationsState.run,
-                    onValueChange = { onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, it)) },
-                    label = { Text("Run #") },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = customTextFieldColors,
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
                     value = stationsState.facilityName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.FACILITY_NAME, it)) },
                     label = { Text("Facility Name") },
@@ -177,65 +173,56 @@ fun StationsScreen(
             Spacer(Modifier.height(16.dp))
 
             // Render item sections
-            itemSections.forEachIndexed { index, section ->
+            stationsItemSections.forEachIndexed { index, section ->
                 ItemSection(
                     section = section,
                     index = index,
                     isSelected = isInSelectionMode && selectedSections.contains(index),
                     customTextFieldColors = customTextFieldColors,
+                    onRunNumberChange = { value -> 
+                        onUpdateItemSection(index, section.copy(sectionRunNumber = value))
+                    },
                     onTotesChange = { value -> 
-                        val updatedSections = itemSections.toMutableList().apply {
-                            set(index, section.copy(totes = value))
-                        }
-                        itemSections.clear()
-                        itemSections.addAll(updatedSections)
+                        onUpdateItemSection(index, section.copy(totes = value))
                     },
                     onAddOnsChange = { value -> 
-                        val updatedSections = itemSections.toMutableList().apply {
-                            set(index, section.copy(addOns = value))
-                        }
-                        itemSections.clear()
-                        itemSections.addAll(updatedSections)
+                        onUpdateItemSection(index, section.copy(addOns = value))
                     },
                     onExtraChange = { value -> 
-                        val updatedSections = itemSections.toMutableList().apply {
-                            set(index, section.copy(extra = value))
-                        }
-                        itemSections.clear()
-                        itemSections.addAll(updatedSections)
+                        onUpdateItemSection(index, section.copy(extra = value))
                     },
                     onPrintNameChange = { value ->
-                        val updatedSections = itemSections.toMutableList().apply {
-                            set(index, section.copy(printName = value))
-                        }
-                        itemSections.clear()
-                        itemSections.addAll(updatedSections)
+                        onUpdateItemSection(index, section.copy(printName = value))
                     },
                     onSignatureChange = { bitmap ->
-                        val updatedSections = itemSections.toMutableList().apply {
-                            set(index, section.copy(signature = bitmap))
-                        }
-                        itemSections.clear()
-                        itemSections.addAll(updatedSections)
+                        onUpdateItemSection(index, section.copy(signature = bitmap))
+                    },
+                    onImageAdded = { uri ->
+                        val updatedImages = section.images + uri
+                        onUpdateItemSection(index, section.copy(images = updatedImages))
+                    },
+                    onImageRemoved = { uri ->
+                        val updatedImages = section.images - uri
+                        onUpdateItemSection(index, section.copy(images = updatedImages))
                     },
                     onLongClick = {
                         if (!isInSelectionMode) {
                             isInSelectionMode = true
                             selectedSections = setOf(index)
                         } else {
-                            if (selectedSections.contains(index)) {
-                                selectedSections = selectedSections - index
+                            selectedSections = if (selectedSections.contains(index)) {
+                                selectedSections - index
                             } else {
-                                selectedSections = selectedSections + index
+                                selectedSections + index
                             }
                         }
                     },
                     onClick = {
                         if (isInSelectionMode) {
-                            if (selectedSections.contains(index)) {
-                                selectedSections = selectedSections - index
+                            selectedSections = if (selectedSections.contains(index)) {
+                                selectedSections - index
                             } else {
-                                selectedSections = selectedSections + index
+                                selectedSections + index
                             }
                             
                             // Exit selection mode if no items are selected
@@ -281,15 +268,7 @@ fun StationsScreen(
                     IconButton(
                         onClick = {
                             // Delete selected sections (in reverse order to maintain indices)
-                            val sortedIndices = selectedSections.sortedDescending()
-                            val updatedSections = itemSections.toMutableList()
-                            sortedIndices.forEach { index ->
-                                if (index < updatedSections.size) {
-                                    updatedSections.removeAt(index)
-                                }
-                            }
-                            itemSections.clear()
-                            itemSections.addAll(updatedSections)
+                            onRemoveItemSections(selectedSections.sortedDescending())
                             
                             // Reset selection
                             selectedSections = emptySet()
@@ -317,22 +296,23 @@ fun StationsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
             ) {
-                IconButton(
-                    onClick = {
-                        val newSection = StationsItemSection(id = itemSections.size)
-                        itemSections.add(newSection)
-                    },
+                Box(
                     modifier = Modifier
                         .size(40.dp)
                         .border(
                             BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(50)
                         )
+                        .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(50))
+                        .clickable {
+                            onAddItemSection()
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Add Section",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = Color.White
                     )
                 }
             }
@@ -347,11 +327,14 @@ fun ItemSection(
     index: Int,
     isSelected: Boolean = false,
     customTextFieldColors: TextFieldColors,
+    onRunNumberChange: (String) -> Unit,
     onTotesChange: (String) -> Unit,
     onAddOnsChange: (String) -> Unit,
     onExtraChange: (String) -> Unit,
     onPrintNameChange: (String) -> Unit,
     onSignatureChange: (android.graphics.Bitmap?) -> Unit,
+    onImageAdded: (Uri) -> Unit,
+    onImageRemoved: (Uri) -> Unit,
     onLongClick: () -> Unit = {},
     onClick: () -> Unit = {}
 ) {
@@ -376,6 +359,22 @@ fun ItemSection(
             )
             .then(if (isSelected) Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary)) else Modifier)
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedTextField(
+                value = section.sectionRunNumber,
+                onValueChange = onRunNumberChange,
+                label = { Text("Run #, Station") },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = customTextFieldColors,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -425,6 +424,15 @@ fun ItemSection(
                 colors = customTextFieldColors,
             )
         }
+        Spacer(Modifier.height(8.dp))
+        
+        // Attached Images
+        MultiImagePicker(
+            images = section.images,
+            onImageAdded = onImageAdded,
+            onImageRemoved = onImageRemoved,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(8.dp))
         
         // Print Name

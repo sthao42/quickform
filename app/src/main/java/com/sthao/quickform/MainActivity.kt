@@ -28,6 +28,7 @@ import com.sthao.quickform.ui.components.TopBanner
 import com.sthao.quickform.ui.dropoff.DropoffScreen
 import com.sthao.quickform.ui.pickup.PickupScreen
 import com.sthao.quickform.ui.saved.SavedFormsScreen
+import com.sthao.quickform.ui.stations.StationsScreen // Added for Stations
 import com.sthao.quickform.ui.theme.QuickFormTheme
 import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
@@ -48,10 +49,11 @@ class MainActivity : ComponentActivity() {
             QuickFormTheme {
                 val pickupState by formViewModel.pickupState.collectAsState()
                 val dropoffState by formViewModel.dropoffState.collectAsState()
+                val stationsState by formViewModel.stationsState.collectAsState() // Added for Stations
 
                 val context = LocalContext.current
                 val coroutineScope = rememberCoroutineScope()
-                val appPagerState = rememberPagerState(pageCount = { 3 })
+                val appPagerState = rememberPagerState(pageCount = { 4 }) // Updated page count
                 val focusManager = LocalFocusManager.current
 
                 val nestedScrollConnection = remember {
@@ -70,15 +72,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-
-                val customTextFieldColors =
-                    TextFieldDefaults.colors(
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        cursorColor = MaterialTheme.colorScheme.onBackground,
-                        focusedLabelColor = MaterialTheme.colorScheme.onBackground,
-                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    )
 
                 Scaffold(
                     topBar = { TopBanner() },
@@ -110,11 +103,18 @@ class MainActivity : ComponentActivity() {
                                         PickupScreen(
                                             state = pickupState,
                                             onEvent = formViewModel::onEvent,
-                                            customTextFieldColors = customTextFieldColors,
+                                            customTextFieldColors = TextFieldDefaults.colors(
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                                cursorColor = MaterialTheme.colorScheme.onBackground,
+                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
+                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                            ),
                                             runNumber = pickupState.run,
                                             onRunNumberChange = { newRun ->
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
                                             }
                                         )
                                     }
@@ -123,20 +123,52 @@ class MainActivity : ComponentActivity() {
                                         DropoffScreen(
                                             state = dropoffState,
                                             onEvent = formViewModel::onEvent,
-                                            customTextFieldColors = customTextFieldColors,
+                                            customTextFieldColors = TextFieldDefaults.colors(
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                                cursorColor = MaterialTheme.colorScheme.onBackground,
+                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
+                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                            ),
                                             runNumber = dropoffState.run,
                                             onRunNumberChange = { newRun ->
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
                                             }
                                         )
                                     }
-                                2 ->
+                                2 -> // Added for Stations
+                                    Column(modifier = formPageModifier) {
+                                        val stationsItemSections by formViewModel.stationsItemSections.collectAsState()
+                                        StationsScreen(
+                                            stationsState = stationsState,
+                                            stationsItemSections = stationsItemSections,
+                                            onEvent = formViewModel::onEvent,
+                                            customTextFieldColors = TextFieldDefaults.colors(
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                                cursorColor = MaterialTheme.colorScheme.onBackground,
+                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
+                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                            ),
+                                            onUpdateItemSection = { index, section ->
+                                                formViewModel.onEvent(FormEvent.UpdateStationsItemSection(index, section))
+                                            },
+                                            onAddItemSection = {
+                                                formViewModel.onEvent(FormEvent.AddStationsItemSection)
+                                            },
+                                            onRemoveItemSections = { indices ->
+                                                formViewModel.onEvent(FormEvent.RemoveStationsItemSections(indices))
+                                            }
+                                        )
+                                    }
+                                3 -> // Adjusted index for SavedFormsScreen
                                     Box(modifier = Modifier.padding(paddingValues)) {
                                         SavedFormsScreen(
                                             formViewModel = formViewModel,
                                             onEntryClick = { selectedForm ->
-                                                formViewModel.onEvent(FormEvent.LoadForm(selectedForm))
+                                                formViewModel.loadFormWithSections(selectedForm.formEntry.id)
                                                 coroutineScope.launch {
                                                     appPagerState.animateScrollToPage(0)
                                                 }
@@ -158,7 +190,7 @@ class MainActivity : ComponentActivity() {
                                 onNewEntry = { formViewModel.onEvent(FormEvent.ClearForm) },
                                 onSaveEntry = { formViewModel.onEvent(FormEvent.SaveOrUpdateForm(context)) },
                                 onNavigateToSaved = {
-                                    coroutineScope.launch { appPagerState.animateScrollToPage(2) }
+                                    coroutineScope.launch { appPagerState.animateScrollToPage(3) } // Adjusted index for SavedFormsScreen
                                 },
                                 modifier = Modifier.padding(bottom = 16.dp),
                             )

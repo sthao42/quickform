@@ -39,6 +39,10 @@ val ColorScheme.dropOffForm: Color
     @Composable
     get() = DropOffForm
 
+val ColorScheme.stationsForm: Color
+    @Composable
+    get() = StationsForm
+
 
 @Composable
 fun QuickFormTheme(content: @Composable () -> Unit) {

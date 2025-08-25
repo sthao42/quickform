@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.sthao.quickform.util.Constants.DATABASE_NAME
 
-@Database(entities = [FormEntry::class, FormImage::class], version = 8, exportSchema = false)
+@Database(entities = [FormEntry::class, FormImage::class, StationsItemSectionEntity::class], version = 12, exportSchema = false)
 abstract class FormDatabase : RoomDatabase() {
 
     abstract fun formDao(): FormDao
@@ -55,6 +55,64 @@ abstract class FormDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add Stations columns
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsRun TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsDate TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsDriverName TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsDriverNumber TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsFacilityName TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsTotes TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsAddOns TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsExtra TEXT") // Renamed from stationsQty
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsPrintSignatureOne TEXT")
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsSignatureOne BLOB")
+                
+                // Add indexes for Stations
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_form_entries_stationsDate ON form_entries(stationsDate)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_form_entries_stationsFacilityName ON form_entries(stationsFacilityName)")
+            }
+        }
+
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Rename stationsQty column to stationsExtra
+                db.execSQL("ALTER TABLE form_entries ADD COLUMN stationsExtra TEXT")
+                db.execSQL("UPDATE form_entries SET stationsExtra = stationsQty WHERE stationsQty IS NOT NULL")
+                // Note: We can't easily drop the old column in SQLite, so we'll just leave it
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create the stations_item_sections table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `stations_item_sections` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `formEntryId` INTEGER NOT NULL,
+                        `sectionIndex` INTEGER NOT NULL,
+                        `totes` TEXT NOT NULL,
+                        `addOns` TEXT NOT NULL,
+                        `extra` TEXT NOT NULL,
+                        `printName` TEXT NOT NULL,
+                        `signature` BLOB,
+                        FOREIGN KEY(`formEntryId`) REFERENCES `form_entries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                
+                // Create index for formEntryId
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_stations_item_sections_formEntryId` ON `stations_item_sections` (`formEntryId`)")
+            }
+        }
+
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add sectionIndex column to form_images table
+                db.execSQL("ALTER TABLE form_images ADD COLUMN sectionIndex INTEGER NOT NULL DEFAULT -1")
+            }
+        }
+
         fun getDatabase(context: Context): FormDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -62,7 +120,7 @@ abstract class FormDatabase : RoomDatabase() {
                     FormDatabase::class.java,
                     DATABASE_NAME
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .build()
                 INSTANCE = instance
                 instance

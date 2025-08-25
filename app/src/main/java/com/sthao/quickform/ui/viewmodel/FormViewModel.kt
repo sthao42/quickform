@@ -9,7 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sthao.quickform.FormDatabase
 import com.sthao.quickform.FormEntry
-import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormEntryWithImagesAndSections
 import com.sthao.quickform.FormImage
 import com.sthao.quickform.FormListItem
 import com.sthao.quickform.FormRepository
@@ -35,6 +35,8 @@ import com.sthao.quickform.util.Constants.MIN_FACILITY_NAME_LENGTH
 import com.sthao.quickform.util.Constants.STATEFLOW_SUBSCRIPTION_TIMEOUT
 import com.sthao.quickform.util.Constants.TOAST_ENTRY_SAVED
 import com.sthao.quickform.util.Constants.TOAST_FACILITY_NAME_EMPTY
+import com.sthao.quickform.ui.stations.StationsItemSection
+import com.sthao.quickform.StationsItemSectionEntity
 import androidx.compose.runtime.Immutable
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -96,6 +98,17 @@ data class DropoffUiState(
     val images: List<Uri> = emptyList(),
 )
 
+// Represents the state for the Stations screen.
+@Immutable
+data class StationsUiState(
+    val date: String = SimpleDateFormat(DATE_FORMAT_DISPLAY, Locale.getDefault()).format(Date()),
+    val driverName: String = "",
+    val driverNumber: String = "",
+    val run: String = "",
+    val facilityName: String = "",
+    val images: List<Uri> = emptyList() // Moved printName, signature, totes, addOns, extra to item sections
+)
+
 class FormViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: FormRepository
     val savedForms: StateFlow<List<FormListItem>>
@@ -105,6 +118,12 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _dropoffState = MutableStateFlow(DropoffUiState())
     val dropoffState: StateFlow<DropoffUiState> = _dropoffState.asStateFlow()
+
+    private val _stationsState = MutableStateFlow(StationsUiState()) // Added for Stations
+    val stationsState: StateFlow<StationsUiState> = _stationsState.asStateFlow() // Added for Stations
+
+    private val _stationsItemSections = MutableStateFlow<List<StationsItemSection>>(emptyList()) // Added for Stations Item Sections
+    val stationsItemSections: StateFlow<List<StationsItemSection>> = _stationsItemSections.asStateFlow() // Added for Stations Item Sections
 
     private val _loadedFormId = MutableStateFlow<Long?>(null)
 
@@ -124,32 +143,62 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             is FormEvent.UpdateField -> when(event.section) {
                 FormSection.PICKUP -> _pickupState.update { updateField(it, event.fieldType, event.value) }
                 FormSection.DROPOFF -> _dropoffState.update { updateField(it, event.fieldType, event.value) }
+                FormSection.STATIONS -> _stationsState.update { updateField(it, event.fieldType, event.value) } // Added for Stations
             }
-            
+
             // Generalized signature update events
             is FormEvent.UpdateSignature -> when(event.signatureIndex) {
                 1 -> when(event.section) {
                     FormSection.PICKUP -> _pickupState.update { it.copy(signatureOne = event.bitmap) }
                     FormSection.DROPOFF -> _dropoffState.update { it.copy(signatureOne = event.bitmap) }
+                    FormSection.STATIONS -> {} // Removed since signature is now in item sections
                 }
                 2 -> when(event.section) {
                     FormSection.PICKUP -> _pickupState.update { it.copy(signatureTwo = event.bitmap) }
                     FormSection.DROPOFF -> _dropoffState.update { it.copy(signatureTwo = event.bitmap) }
+                    FormSection.STATIONS -> {} // Removed since signature is now in item sections
                 }
+                else -> {} // Handle unexpected signatureIndex
             }
 
             // Generalized image manipulation events
             is FormEvent.AddImage -> when(event.section) {
                 FormSection.PICKUP -> _pickupState.update { it.copy(images = it.images + event.uri) }
                 FormSection.DROPOFF -> _dropoffState.update { it.copy(images = it.images + event.uri) }
+                FormSection.STATIONS -> _stationsState.update { it.copy(images = it.images + event.uri) } // Added for Stations
             }
             is FormEvent.RemoveImage -> when(event.section) {
                 FormSection.PICKUP -> _pickupState.update { it.copy(images = it.images - event.uri) }
                 FormSection.DROPOFF -> _dropoffState.update { it.copy(images = it.images - event.uri) }
+                FormSection.STATIONS -> _stationsState.update { it.copy(images = it.images - event.uri) } // Added for Stations
             }
 
             // Form Actions
-            is FormEvent.LoadForm -> loadForm(event.formWithImages)
+            is FormEvent.LoadForm -> loadFormWithSections(event.formWithImages.formEntry.id)
+            is FormEvent.LoadFormWithSections -> loadFormWithSections(event.formId)
+            is FormEvent.UpdateStationsItemSection -> {
+                val currentSections = _stationsItemSections.value.toMutableList()
+                if (event.index < currentSections.size) {
+                    currentSections[event.index] = event.itemSection
+                    _stationsItemSections.value = currentSections
+                }
+            }
+            is FormEvent.AddStationsItemSection -> {
+                val currentSections = _stationsItemSections.value.toMutableList()
+                val newSection = StationsItemSection(id = currentSections.size)
+                currentSections.add(newSection)
+                _stationsItemSections.value = currentSections
+            }
+            is FormEvent.RemoveStationsItemSections -> {
+                val currentSections = _stationsItemSections.value.toMutableList()
+                // Remove in reverse order to maintain indices
+                event.indices.forEach { index ->
+                    if (index < currentSections.size) {
+                        currentSections.removeAt(index)
+                    }
+                }
+                _stationsItemSections.value = currentSections
+            }
             is FormEvent.ClearForm -> clearForm()
             is FormEvent.SaveOrUpdateForm -> saveOrUpdateForm(event.context)
             is FormEvent.DeleteFormsByIds -> viewModelScope.launch {
@@ -158,7 +207,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Helper function to update specific fields based on field type
+    // Helper function to update specific fields for pickup state
     private fun updateField(pickupState: PickupUiState, fieldType: FormFieldType, value: String): PickupUiState {
         return when (fieldType) {
             FormFieldType.RUN -> pickupState.copy(run = value)
@@ -181,6 +230,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             FormFieldType.ADDITIONAL_NOTES -> pickupState.copy(additionalNotes = value)
             FormFieldType.PRINT_SIGNATURE_ONE -> pickupState.copy(printSignatureOne = value)
             FormFieldType.PRINT_SIGNATURE_TWO -> pickupState.copy(printSignatureTwo = value)
+            else -> pickupState // Or handle error for unexpected field types
         }
     }
 
@@ -207,23 +257,43 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             FormFieldType.ADDITIONAL_NOTES -> dropoffState.copy(additionalNotes = value)
             FormFieldType.PRINT_SIGNATURE_ONE -> dropoffState.copy(printSignatureOne = value)
             FormFieldType.PRINT_SIGNATURE_TWO -> dropoffState.copy(printSignatureTwo = value)
+            else -> dropoffState // Or handle error for unexpected field types
         }
     }
 
-    suspend fun getFullFormsByIds(ids: Set<Long>): List<FormEntryWithImages> {
+    // Helper function to update specific fields for stations state // Added for Stations
+    private fun updateField(stationsState: StationsUiState, fieldType: FormFieldType, value: String): StationsUiState {
+        return when (fieldType) {
+            FormFieldType.DATE -> stationsState.copy(date = value)
+            FormFieldType.DRIVER_NAME -> stationsState.copy(driverName = value)
+            FormFieldType.DRIVER_NUMBER -> stationsState.copy(driverNumber = value)
+            FormFieldType.RUN -> stationsState.copy(run = value)
+            FormFieldType.FACILITY_NAME -> stationsState.copy(facilityName = value)
+            // Add the missing cases for Stations-specific fields
+            FormFieldType.TOTES -> stationsState.copy() // Totes is now in item sections
+            FormFieldType.ADD_ONS -> stationsState.copy() // Add-ons is now in item sections
+            FormFieldType.EXTRA -> stationsState.copy() // Extra is now in item sections
+            else -> stationsState // Or handle error for unexpected field types
+        }
+    }
+
+    suspend fun getFullFormsByIds(ids: Set<Long>): List<FormEntryWithImagesAndSections> {
         return repository.getFormsWithImagesByIds(ids.toList())
     }
 
-    fun getFormById(id: Long): Flow<FormEntryWithImages> {
-        return repository.getFormWithImagesById(id)
+    fun getFormWithSectionsById(id: Long): Flow<FormEntryWithImagesAndSections> {
+        return repository.getFormWithImagesAndSectionsById(id)
     }
 
     private fun saveOrUpdateForm(context: Context) = viewModelScope.launch {
         val currentPickupState = _pickupState.value
         val currentDropoffState = _dropoffState.value
+        val currentStationsState = _stationsState.value // Added for Stations
 
-        if (currentPickupState.facilityName.length < MIN_FACILITY_NAME_LENGTH && 
-            currentDropoffState.facilityName.length < MIN_FACILITY_NAME_LENGTH) {
+        // Updated validation to include Stations facility name
+        if (currentPickupState.facilityName.length < MIN_FACILITY_NAME_LENGTH &&
+            currentDropoffState.facilityName.length < MIN_FACILITY_NAME_LENGTH &&
+            currentStationsState.facilityName.length < MIN_FACILITY_NAME_LENGTH) {
             Toast.makeText(context, TOAST_FACILITY_NAME_EMPTY, Toast.LENGTH_SHORT).show()
             return@launch
         }
@@ -240,9 +310,13 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         val dropoffSignatureOneBytes = currentDropoffState.signatureOne?.let { bitmapToPngByteArray(it) }
         val dropoffSignatureTwoBytes = currentDropoffState.signatureTwo?.let { bitmapToPngByteArray(it) }
 
+        val formType = if (currentStationsState.facilityName.isNotBlank()) "stations" else "pickup_dropoff"
+
         val formToSave = FormEntry(
             id = _loadedFormId.value ?: 0,
             entryTitle = title,
+            formType = formType,
+            // Pickup fields
             pickupRun = currentPickupState.run,
             pickupDate = currentPickupState.date,
             pickupDriverName = currentPickupState.driverName,
@@ -265,6 +339,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             pickupPrintSignatureTwo = currentPickupState.printSignatureTwo,
             pickupSignatureOne = pickupSignatureOneBytes,
             pickupSignatureTwo = pickupSignatureTwoBytes,
+            // Dropoff fields
             dropoffRun = currentDropoffState.run,
             dropoffDate = currentDropoffState.date,
             dropoffDriverName = currentDropoffState.driverName,
@@ -286,44 +361,101 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             dropoffPrintSignatureOne = currentDropoffState.printSignatureOne,
             dropoffPrintSignatureTwo = currentDropoffState.printSignatureTwo,
             dropoffSignatureOne = dropoffSignatureOneBytes,
-            dropoffSignatureTwo = dropoffSignatureTwoBytes
+            dropoffSignatureTwo = dropoffSignatureTwoBytes,
+            // Stations fields - Basic fields only
+            stationsRun = currentStationsState.run,
+            stationsDate = currentStationsState.date,
+            stationsDriverName = currentStationsState.driverName,
+            stationsDriverNumber = currentStationsState.driverNumber,
+            stationsFacilityName = currentStationsState.facilityName,
+            stationsTotes = "", // Moved to item sections
+            stationsAddOns = "", // Moved to item sections
+            stationsExtra = "", // Moved to item sections
+            stationsPrintSignatureOne = "", // Moved to item sections
+            stationsSignatureOne = null // Moved to item sections
         )
 
         val imagesToSave = mutableListOf<FormImage>()
-        currentPickupState.images.forEach { uri ->
-            downsampleImageFromUri(context, uri, Constants.IMAGE_MAX_DIMENSION)?.let { imageData ->
-                imagesToSave.add(FormImage(imageType = IMAGE_TYPE_PICKUP, imageData = imageData, formEntryId = 0))
+        
+        // Helper function to process images
+        fun processImages(images: List<Uri>, imageType: String, sectionIndex: Int = -1) {
+            images.forEach { uri ->
+                downsampleImageFromUri(context, uri, Constants.IMAGE_MAX_DIMENSION)?.let { imageData ->
+                    imagesToSave.add(FormImage(
+                        imageType = imageType,
+                        imageData = imageData,
+                        formEntryId = 0,
+                        sectionIndex = sectionIndex
+                    ))
+                }
             }
         }
-        currentDropoffState.images.forEach { uri ->
-            downsampleImageFromUri(context, uri, Constants.IMAGE_MAX_DIMENSION)?.let { imageData ->
-                imagesToSave.add(FormImage(imageType = IMAGE_TYPE_DROPOFF, imageData = imageData, formEntryId = 0))
-            }
+        
+        // Process images for each section
+        processImages(currentPickupState.images, IMAGE_TYPE_PICKUP)
+        processImages(currentDropoffState.images, IMAGE_TYPE_DROPOFF)
+        processImages(currentStationsState.images, Constants.IMAGE_TYPE_STATIONS)
+        
+        // Add images for each Stations item section
+        _stationsItemSections.value.forEachIndexed { index, section ->
+            processImages(section.images, Constants.IMAGE_TYPE_STATIONS, index)
         }
 
-        repository.saveFormWithImages(formToSave, imagesToSave)
+        // Convert StationsItemSections to StationsItemSectionEntity for database storage
+        val sectionsToSave = _stationsItemSections.value.mapIndexed { index, section ->
+            val signatureBytes = section.signature?.let { bitmapToPngByteArray(it) }
+            StationsItemSectionEntity(
+                id = 0, // ID will be auto-generated
+                formEntryId = 0, // Will be set when saving
+                sectionIndex = index,
+                sectionRunNumber = section.sectionRunNumber,
+                totes = section.totes,
+                addOns = section.addOns,
+                extra = section.extra,
+                printName = section.printName,
+                signature = signatureBytes
+            )
+        }
+
+        repository.saveFormWithImagesAndSections(formToSave, imagesToSave, sectionsToSave)
 
         Toast.makeText(context, TOAST_ENTRY_SAVED, Toast.LENGTH_SHORT).show()
         clearForm()
     }
 
-    private fun loadForm(formWithImages: FormEntryWithImages) {
+    
+
+    fun loadFormWithSections(id: Long) {
+        viewModelScope.launch {
+            try {
+                repository.getFormWithImagesAndSectionsById(id).first().let { formWithSections ->
+                    loadFormWithSections(formWithSections)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun loadFormWithSections(formWithSections: FormEntryWithImagesAndSections) {
         val context = getApplication<Application>().applicationContext
-        val form = formWithImages.formEntry
+        val form = formWithSections.formEntry
 
         val pickupSignatureOneBitmap = form.pickupSignatureOne?.let { byteArrayToBitmap(it) }
         val pickupSignatureTwoBitmap = form.pickupSignatureTwo?.let { byteArrayToBitmap(it) }
         val dropoffSignatureOneBitmap = form.dropoffSignatureOne?.let { byteArrayToBitmap(it) }
         val dropoffSignatureTwoBitmap = form.dropoffSignatureTwo?.let { byteArrayToBitmap(it) }
 
-
-        val pickupImageUris = formWithImages.images
-            .filter { it.imageType == IMAGE_TYPE_PICKUP }
-            .mapNotNull { byteArrayToUri(context, it.imageData, "pickup_${it.id}${Constants.PNG_EXTENSION}") }
-
-        val dropoffImageUris = formWithImages.images
-            .filter { it.imageType == IMAGE_TYPE_DROPOFF }
-            .mapNotNull { byteArrayToUri(context, it.imageData, "dropoff_${it.id}${Constants.PNG_EXTENSION}") }
+        // Helper function to convert images
+        fun convertImages(imageType: String, prefix: String): List<Uri> {
+            return formWithSections.images
+                .filter { it.imageType == imageType && it.sectionIndex == -1 }
+                .mapNotNull { byteArrayToUri(context, it.imageData, "${prefix}_${it.id}${Constants.PNG_EXTENSION}") }
+        }
+        
+        val pickupImageUris = convertImages(IMAGE_TYPE_PICKUP, "pickup")
+        val dropoffImageUris = convertImages(IMAGE_TYPE_DROPOFF, "dropoff")
+        val stationsImageUris = convertImages(Constants.IMAGE_TYPE_STATIONS, "stations")
 
         _loadedFormId.value = form.id
 
@@ -378,11 +510,45 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             signatureTwo = dropoffSignatureTwoBitmap,
             images = dropoffImageUris
         )
+
+        // Load Stations basic fields
+        _stationsState.value = StationsUiState(
+            run = form.stationsRun ?: "",
+            date = form.stationsDate ?: "",
+            driverName = form.stationsDriverName ?: "",
+            driverNumber = form.stationsDriverNumber ?: "",
+            facilityName = form.stationsFacilityName ?: "",
+            images = stationsImageUris
+        )
+
+        // Load Stations item sections
+        val itemSections = formWithSections.stationsItemSections.map { sectionEntity ->
+            val signatureBitmap = sectionEntity.signature?.let { byteArrayToBitmap(it) }
+            
+            // Get images for this section
+            val sectionImages = formWithSections.images
+                .filter { it.imageType == Constants.IMAGE_TYPE_STATIONS && it.sectionIndex == sectionEntity.sectionIndex }
+                .mapNotNull { byteArrayToUri(context, it.imageData, "stations_${it.id}_section_${sectionEntity.sectionIndex}${Constants.PNG_EXTENSION}") }
+            
+            StationsItemSection(
+                id = sectionEntity.sectionIndex,
+                sectionRunNumber = sectionEntity.sectionRunNumber,
+                totes = sectionEntity.totes,
+                addOns = sectionEntity.addOns,
+                extra = sectionEntity.extra,
+                printName = sectionEntity.printName,
+                signature = signatureBitmap,
+                images = sectionImages
+            )
+        }
+        _stationsItemSections.value = itemSections
     }
 
     private fun clearForm() {
         _loadedFormId.value = null
         _pickupState.value = PickupUiState()
         _dropoffState.value = DropoffUiState()
+        _stationsState.value = StationsUiState() // Added for Stations
+        _stationsItemSections.value = emptyList() // Added for Stations Item Sections
     }
 }

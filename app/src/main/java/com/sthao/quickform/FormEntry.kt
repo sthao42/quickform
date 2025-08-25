@@ -14,14 +14,17 @@ import androidx.room.PrimaryKey
         Index(value = ["entryTitle"]),
         Index(value = ["pickupDate"]),
         Index(value = ["dropoffDate"]),
+        Index(value = ["stationsDate"]), // Added for Stations
         Index(value = ["pickupFacilityName"]),
-        Index(value = ["dropoffFacilityName"])
+        Index(value = ["dropoffFacilityName"]),
+        Index(value = ["stationsFacilityName"]) // Added for Stations
     ]
 )
 data class FormEntry(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val entryTitle: String = "",
+    val formType: String = "pickup_dropoff",
 
     // Pickup details
     val pickupRun: String?,
@@ -70,6 +73,18 @@ data class FormEntry(
     val dropoffPrintSignatureTwo: String?,
     val dropoffSignatureOne: ByteArray?, // Stored as BLOB
     val dropoffSignatureTwo: ByteArray?, // Stored as BLOB
+
+    // Stations details
+    val stationsRun: String?,
+    val stationsDate: String?,
+    val stationsDriverName: String?,
+    val stationsDriverNumber: String?,
+    val stationsFacilityName: String?,
+    val stationsTotes: String?,
+    val stationsAddOns: String?,
+    val stationsExtra: String?, // Renamed from stationsQty
+    val stationsPrintSignatureOne: String?,
+    val stationsSignatureOne: ByteArray?, // Stored as BLOB
 ) {
     // Overriding equals and hashCode to ensure structural comparison of ByteArray properties.
     override fun equals(other: Any?): Boolean {
@@ -80,6 +95,7 @@ data class FormEntry(
 
         if (id != other.id) return false
         if (entryTitle != other.entryTitle) return false
+        if (formType != other.formType) return false
         if (pickupRun != other.pickupRun) return false
         if (pickupDate != other.pickupDate) return false
         if (pickupDriverName != other.pickupDriverName) return false
@@ -100,14 +116,8 @@ data class FormEntry(
         if (pickupAdditionalNotes != other.pickupAdditionalNotes) return false
         if (pickupPrintSignatureOne != other.pickupPrintSignatureOne) return false
         if (pickupPrintSignatureTwo != other.pickupPrintSignatureTwo) return false
-        if (pickupSignatureOne != null) {
-            if (other.pickupSignatureOne == null) return false
-            if (!pickupSignatureOne.contentEquals(other.pickupSignatureOne)) return false
-        } else if (other.pickupSignatureOne != null) return false
-        if (pickupSignatureTwo != null) {
-            if (other.pickupSignatureTwo == null) return false
-            if (!pickupSignatureTwo.contentEquals(other.pickupSignatureTwo)) return false
-        } else if (other.pickupSignatureTwo != null) return false
+        if (!pickupSignatureOne.contentEquals(other.pickupSignatureOne)) return false
+        if (!pickupSignatureTwo.contentEquals(other.pickupSignatureTwo)) return false
         if (dropoffRun != other.dropoffRun) return false
         if (dropoffDate != other.dropoffDate) return false
         if (dropoffDriverName != other.dropoffDriverName) return false
@@ -128,14 +138,20 @@ data class FormEntry(
         if (dropoffAdditionalNotes != other.dropoffAdditionalNotes) return false
         if (dropoffPrintSignatureOne != other.dropoffPrintSignatureOne) return false
         if (dropoffPrintSignatureTwo != other.dropoffPrintSignatureTwo) return false
-        if (dropoffSignatureOne != null) {
-            if (other.dropoffSignatureOne == null) return false
-            if (!dropoffSignatureOne.contentEquals(other.dropoffSignatureOne)) return false
-        } else if (other.dropoffSignatureOne != null) return false
-        if (dropoffSignatureTwo != null) {
-            if (other.dropoffSignatureTwo == null) return false
-            if (!dropoffSignatureTwo.contentEquals(other.dropoffSignatureTwo)) return false
-        } else if (other.dropoffSignatureTwo != null) return false
+        if (!dropoffSignatureOne.contentEquals(other.dropoffSignatureOne)) return false
+        if (!dropoffSignatureTwo.contentEquals(other.dropoffSignatureTwo)) return false
+
+        // Stations fields
+        if (stationsRun != other.stationsRun) return false
+        if (stationsDate != other.stationsDate) return false
+        if (stationsDriverName != other.stationsDriverName) return false
+        if (stationsDriverNumber != other.stationsDriverNumber) return false
+        if (stationsFacilityName != other.stationsFacilityName) return false
+        if (stationsTotes != other.stationsTotes) return false
+        if (stationsAddOns != other.stationsAddOns) return false
+        if (stationsExtra != other.stationsExtra) return false
+        if (stationsPrintSignatureOne != other.stationsPrintSignatureOne) return false
+        if (!stationsSignatureOne.contentEquals(other.stationsSignatureOne)) return false
 
         return true
     }
@@ -143,6 +159,7 @@ data class FormEntry(
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + entryTitle.hashCode()
+        result = 31 * result + formType.hashCode()
         result = 31 * result + (pickupRun?.hashCode() ?: 0)
         result = 31 * result + (pickupDate?.hashCode() ?: 0)
         result = 31 * result + (pickupDriverName?.hashCode() ?: 0)
@@ -163,8 +180,8 @@ data class FormEntry(
         result = 31 * result + (pickupAdditionalNotes?.hashCode() ?: 0)
         result = 31 * result + (pickupPrintSignatureOne?.hashCode() ?: 0)
         result = 31 * result + (pickupPrintSignatureTwo?.hashCode() ?: 0)
-        result = 31 * result + (pickupSignatureOne?.contentHashCode() ?: 0)
-        result = 31 * result + (pickupSignatureTwo?.contentHashCode() ?: 0)
+        result = 31 * result + pickupSignatureOne.contentHashCode()
+        result = 31 * result + pickupSignatureTwo.contentHashCode()
         result = 31 * result + (dropoffRun?.hashCode() ?: 0)
         result = 31 * result + (dropoffDate?.hashCode() ?: 0)
         result = 31 * result + (dropoffDriverName?.hashCode() ?: 0)
@@ -185,8 +202,20 @@ data class FormEntry(
         result = 31 * result + (dropoffAdditionalNotes?.hashCode() ?: 0)
         result = 31 * result + (dropoffPrintSignatureOne?.hashCode() ?: 0)
         result = 31 * result + (dropoffPrintSignatureTwo?.hashCode() ?: 0)
-        result = 31 * result + (dropoffSignatureOne?.contentHashCode() ?: 0)
-        result = 31 * result + (dropoffSignatureTwo?.contentHashCode() ?: 0)
+        result = 31 * result + dropoffSignatureOne.contentHashCode()
+        result = 31 * result + dropoffSignatureTwo.contentHashCode()
+        
+        // Stations fields
+        result = 31 * result + (stationsRun?.hashCode() ?: 0)
+        result = 31 * result + (stationsDate?.hashCode() ?: 0)
+        result = 31 * result + (stationsDriverName?.hashCode() ?: 0)
+        result = 31 * result + (stationsDriverNumber?.hashCode() ?: 0)
+        result = 31 * result + (stationsFacilityName?.hashCode() ?: 0)
+        result = 31 * result + (stationsTotes?.hashCode() ?: 0)
+        result = 31 * result + (stationsAddOns?.hashCode() ?: 0)
+        result = 31 * result + (stationsExtra?.hashCode() ?: 0)
+        result = 31 * result + (stationsPrintSignatureOne?.hashCode() ?: 0)
+        result = 31 * result + stationsSignatureOne.contentHashCode()
         return result
     }
 }
