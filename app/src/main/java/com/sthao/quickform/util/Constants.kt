@@ -7,7 +7,6 @@ object Constants {
     
     // Database constants
     const val DATABASE_NAME = "form_database"
-    const val DATABASE_VERSION = 7
     
     // Image processing constants
     const val IMAGE_MAX_DIMENSION = 1024
@@ -45,12 +44,10 @@ object Constants {
     
     // Form validation
     const val MIN_FACILITY_NAME_LENGTH = 1
-    const val MAX_NOTES_LENGTH = 1000
     
     // Toast messages
     const val TOAST_ENTRY_SAVED = "Entry Saved!"
     const val TOAST_FACILITY_NAME_EMPTY = "Cannot save, facility name is empty."
-    const val TOAST_PDF_SAVED = "PDF saved to Downloads"
     const val TOAST_NO_ENTRIES_SELECTED = "No entries selected for export."
     const val TOAST_ERROR_EXPORTING = "Error exporting PDF"
     
@@ -61,7 +58,6 @@ object Constants {
     
     // File extensions
     const val PNG_EXTENSION = ".png"
-    const val PDF_EXTENSION = ".pdf"
     
     // Form field defaults
     const val DEFAULT_QUANTITY = "0"
