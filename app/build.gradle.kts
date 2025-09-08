@@ -14,7 +14,7 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 1
-        versionName = "1.3.1"
+        versionName = "1.4.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         signingConfig = signingConfigs["debug"]
@@ -41,6 +41,9 @@ android {
     }
     kotlin {
         jvmToolchain(21)
+        compilerOptions {
+            verbose = true
+        }
     }
     buildFeatures {
         compose = true
