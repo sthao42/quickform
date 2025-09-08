@@ -12,8 +12,9 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
 import com.sthao.quickform.FormEntry
-import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormEntryWithImagesAndSections
 import com.sthao.quickform.FormImage
+import com.sthao.quickform.StationsItemSectionEntity
 import com.sthao.quickform.util.Constants.DATE_FORMAT_FILENAME
 import com.sthao.quickform.util.Constants.DEFAULT_EMPTY_VALUE
 import com.sthao.quickform.util.Constants.DEFAULT_QUANTITY
@@ -59,7 +60,7 @@ private object PdfDimens {
 /**
  * Exports a list of forms to a single PDF file in the app's cache for sharing.
  */
-fun exportToPdfForSharing(context: Context, forms: List<FormEntryWithImages>): File? {
+fun exportToPdfForSharing(context: Context, forms: List<FormEntryWithImagesAndSections>): File? {
     if (forms.isEmpty()) return null
 
     val pdfDocument = PdfDocument()
@@ -87,7 +88,7 @@ fun exportToPdfForSharing(context: Context, forms: List<FormEntryWithImages>): F
 /**
  * Exports multiple forms to a single PDF file and saves it to the device's Downloads folder.
  */
-fun exportMultipleFormsAsPdf(context: Context, formsWithIds: List<Pair<FormEntryWithImages, String>>) {
+fun exportMultipleFormsAsPdf(context: Context, formsWithIds: List<Pair<FormEntryWithImagesAndSections, String>>) {
     if (formsWithIds.isEmpty()) {
         Toast.makeText(context, TOAST_NO_ENTRIES_SELECTED, Toast.LENGTH_SHORT).show()
         return
@@ -167,25 +168,120 @@ private class PdfLayoutManager(private val document: PdfDocument) {
 }
 
 /**
- * Main orchestrator function that draws a full form (Pickup and Dropoff sections) onto a PDF.
+ * Helper function to check if pickup section has any meaningful data.
  */
-private fun drawFormOnPdf(document: PdfDocument, formWithImages: FormEntryWithImages, sequentialId: String) {
-    val formEntry = formWithImages.formEntry
-    val pickupImages = formWithImages.images.filter { it.imageType == IMAGE_TYPE_PICKUP }
-    val dropoffImages = formWithImages.images.filter { it.imageType == IMAGE_TYPE_DROPOFF }
-
-    // Draws the Pickup section on its own page.
-    val pickupLayoutManager = PdfLayoutManager(document)
-    drawPageHeader(pickupLayoutManager, "Form Entry: ${formEntry.pickupDate ?: "N/A"}-$sequentialId (Pickup)")
-    drawSectionContent(pickupLayoutManager, "Pickup Information", formEntry, pickupImages, isPickup = true)
-    pickupLayoutManager.finishPage()
-
-    // Draws the Dropoff section on its own page.
-    val dropoffLayoutManager = PdfLayoutManager(document)
-    drawPageHeader(dropoffLayoutManager, "Form Entry: ${formEntry.dropoffDate ?: "N/A"}-$sequentialId (Drop-off)")
-    drawSectionContent(dropoffLayoutManager, "Drop-off Information", formEntry, dropoffImages, isPickup = false)
-    dropoffLayoutManager.finishPage()
+private fun hasPickupData(form: FormEntry): Boolean {
+    return !form.pickupDate.isNullOrBlank() ||
+           !form.pickupDriverName.isNullOrBlank() ||
+           !form.pickupDriverNumber.isNullOrBlank() ||
+           !form.pickupFacilityName.isNullOrBlank() ||
+           !form.pickupFrozenBags.isNullOrBlank() ||
+           !form.pickupFrozenQuantity.isNullOrBlank() ||
+           !form.pickupRefrigeratedBags.isNullOrBlank() ||
+           !form.pickupRefrigeratedQuantity.isNullOrBlank() ||
+           !form.pickupRoomTempBags.isNullOrBlank() ||
+           !form.pickupRoomTempQuantity.isNullOrBlank() ||
+           !form.pickupBoxesQuantity.isNullOrBlank() ||
+           !form.pickupColoredBagsQuantity.isNullOrBlank() ||
+           !form.pickupMailsQuantity.isNullOrBlank() ||
+           !form.pickupMoneyBagsQuantity.isNullOrBlank() ||
+           !form.pickupOthersQuantity.isNullOrBlank() ||
+           !form.pickupNotes.isNullOrBlank() ||
+           !form.pickupAdditionalNotes.isNullOrBlank() ||
+           !form.pickupPrintSignatureOne.isNullOrBlank() ||
+           !form.pickupPrintSignatureTwo.isNullOrBlank() ||
+           form.pickupSignatureOne != null ||
+           form.pickupSignatureTwo != null
 }
+
+/**
+ * Helper function to check if dropoff section has any meaningful data.
+ */
+private fun hasDropoffData(form: FormEntry): Boolean {
+    return !form.dropoffDate.isNullOrBlank() ||
+           !form.dropoffDriverName.isNullOrBlank() ||
+           !form.dropoffDriverNumber.isNullOrBlank() ||
+           !form.dropoffFacilityName.isNullOrBlank() ||
+           !form.dropoffFrozenBags.isNullOrBlank() ||
+           !form.dropoffFrozenQuantity.isNullOrBlank() ||
+           !form.dropoffRefrigeratedBags.isNullOrBlank() ||
+           !form.dropoffRefrigeratedQuantity.isNullOrBlank() ||
+           !form.dropoffRoomTempBags.isNullOrBlank() ||
+           !form.dropoffRoomTempQuantity.isNullOrBlank() ||
+           !form.dropoffBoxesQuantity.isNullOrBlank() ||
+           !form.dropoffColoredBagsQuantity.isNullOrBlank() ||
+           !form.dropoffMailsQuantity.isNullOrBlank() ||
+           !form.dropoffMoneyBagsQuantity.isNullOrBlank() ||
+           !form.dropoffOthersQuantity.isNullOrBlank() ||
+           !form.dropoffNotes.isNullOrBlank() ||
+           !form.dropoffAdditionalNotes.isNullOrBlank() ||
+           !form.dropoffPrintSignatureOne.isNullOrBlank() ||
+           !form.dropoffPrintSignatureTwo.isNullOrBlank() ||
+           form.dropoffSignatureOne != null ||
+           form.dropoffSignatureTwo != null
+}
+
+/**
+ * Helper function to check if stations section has any meaningful data.
+ */
+private fun hasStationsData(form: FormEntry, sections: List<StationsItemSectionEntity>): Boolean {
+    val hasFormData = !form.stationsDate.isNullOrBlank() ||
+                     !form.stationsDriverName.isNullOrBlank() ||
+                     !form.stationsDriverNumber.isNullOrBlank() ||
+                     !form.stationsFacilityName.isNullOrBlank() ||
+                     !form.stationsTotes.isNullOrBlank() ||
+                     !form.stationsAddOns.isNullOrBlank() ||
+                     !form.stationsExtra.isNullOrBlank() ||
+                     !form.stationsPrintSignatureOne.isNullOrBlank() ||
+                     form.stationsSignatureOne != null
+    
+    val hasSectionData = sections.isNotEmpty() && sections.any { section ->
+        section.sectionRunNumber.isNotBlank() ||
+        section.totes.isNotBlank() ||
+        section.addOns.isNotBlank() ||
+        section.extra.isNotBlank() ||
+        section.printName.isNotBlank() ||
+        section.signature != null
+    }
+    
+    return hasFormData || hasSectionData
+}
+
+/**
+ * Main orchestrator function that draws a full form (Pickup first, then Dropoff, then Stations) onto a PDF.
+ */
+private fun drawFormOnPdf(document: PdfDocument, formWithImagesAndSections: FormEntryWithImagesAndSections, sequentialId: String) {
+    val formEntry = formWithImagesAndSections.formEntry
+    val pickupImages = formWithImagesAndSections.images.filter { it.imageType == IMAGE_TYPE_PICKUP }
+    val dropoffImages = formWithImagesAndSections.images.filter { it.imageType == IMAGE_TYPE_DROPOFF }
+    val stationsImages = formWithImagesAndSections.images.filter { it.imageType != IMAGE_TYPE_PICKUP && it.imageType != IMAGE_TYPE_DROPOFF }
+    val sections = formWithImagesAndSections.stationsItemSections
+
+    // Draw Pickup section if it has data
+    if (hasPickupData(formEntry)) {
+        val pickupLayoutManager = PdfLayoutManager(document)
+        drawPageHeader(pickupLayoutManager, "Form Entry: ${formEntry.pickupDate ?: "N/A"}-$sequentialId (Pickup)")
+        drawSectionContent(pickupLayoutManager, "Pickup Information", formEntry, pickupImages, isPickup = true)
+        pickupLayoutManager.finishPage()
+    }
+
+    // Draw Dropoff section if it has data
+    if (hasDropoffData(formEntry)) {
+        val dropoffLayoutManager = PdfLayoutManager(document)
+        drawPageHeader(dropoffLayoutManager, "Form Entry: ${formEntry.dropoffDate ?: "N/A"}-$sequentialId (Drop-off)")
+        drawSectionContent(dropoffLayoutManager, "Drop-off Information", formEntry, dropoffImages, isPickup = false)
+        dropoffLayoutManager.finishPage()
+    }
+
+    // Draw Stations section if it has data
+    if (hasStationsData(formEntry, sections)) {
+        val stationsLayoutManager = PdfLayoutManager(document)
+        drawPageHeader(stationsLayoutManager, "Form Entry: ${formEntry.stationsDate ?: "N/A"}-$sequentialId (Stations)")
+        drawStationsSectionContent(stationsLayoutManager, formEntry, stationsImages, sections)
+        stationsLayoutManager.finishPage()
+    }
+}
+
 
 /**
  * Draws all content for a given section, matching the new UI layout.
@@ -439,3 +535,171 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
     }
     layoutManager.advanceY(PdfDimens.SECTION_SPACING)
 }
+
+/**
+ * Draws the basic Stations form info (Facility, Driver, Date, Run#) in a two-column layout.
+ */
+private fun drawStationsBasicInfo(layoutManager: PdfLayoutManager, form: FormEntry) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING * 2)
+    val startYForInfo = layoutManager.yPos
+    layoutManager.draw { canvas ->
+        val facility = form.stationsFacilityName
+        val driverName = form.stationsDriverName
+        val driverNum = form.stationsDriverNumber
+        val date = form.stationsDate
+
+        canvas.drawText("Facility:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        canvas.drawText((facility ?: "").ifEmpty { DEFAULT_EMPTY_VALUE }, PdfDimens.MARGIN + 60, layoutManager.yPos, PdfDimens.BODY_PAINT)
+        canvas.drawText("Driver:", PdfDimens.MARGIN, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.HEADER_PAINT)
+        canvas.drawText("${driverName ?: ""} (#${driverNum ?: ""})", PdfDimens.MARGIN + 60, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.BODY_PAINT)
+
+        val col2X = PdfDimens.MARGIN + PdfDimens.CONTENT_WIDTH / 2
+        canvas.drawText("Date:", col2X, startYForInfo, PdfDimens.HEADER_PAINT)
+        canvas.drawText((date ?: "").ifEmpty { DEFAULT_EMPTY_VALUE }, col2X + 50, startYForInfo, PdfDimens.BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING * 2 + PdfDimens.SECTION_SPACING)
+}
+
+/** 
+ * Draws a single Stations item section.
+ */
+private fun drawStationsItemSection(layoutManager: PdfLayoutManager, sectionNumber: Int, section: StationsItemSectionEntity, images: List<FormImage>) {
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+    layoutManager.draw { canvas ->
+        canvas.drawText("Item Section $sectionNumber", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING)
+
+    // Draw section run number
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+    layoutManager.draw { canvas ->
+        val text = "Station Run #: ${section.sectionRunNumber.ifBlank { DEFAULT_EMPTY_VALUE }}"
+        canvas.drawText(text, PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.MONO_BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING)
+
+    // Draw item details
+    val itemsData = listOf(
+        "Totes" to section.totes,
+        "Add-ons" to section.addOns,
+        "Extra" to section.extra
+    )
+    
+    itemsData.forEach { (name, value) ->
+        layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+        layoutManager.draw { canvas ->
+            val text = "${name.padEnd(15, ' ')} ${value.ifBlank { DEFAULT_QUANTITY }.padStart(3)}"
+            canvas.drawText(text, PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.MONO_BODY_PAINT)
+        }
+        layoutManager.advanceY(PdfDimens.LINE_SPACING)
+    }
+    
+    // Draw print name
+    layoutManager.prepareToDraw(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
+    layoutManager.draw { canvas ->
+        canvas.drawText("Print Name:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        canvas.drawText(section.printName.ifEmpty { DEFAULT_EMPTY_VALUE }, PdfDimens.MARGIN + 100, layoutManager.yPos, PdfDimens.BODY_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING + PdfDimens.SECTION_SPACING)
+    
+    // Draw signature
+    val signatureBoxWidth = PdfDimens.CONTENT_WIDTH / 2.5f
+    val signatureBoxHeight = 60f
+
+    layoutManager.prepareToDraw(signatureBoxHeight + (PdfDimens.LINE_SPACING * 2))
+    
+    val signatureRect = RectF(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos + signatureBoxHeight)
+    byteArrayToBitmap(section.signature ?: byteArrayOf())?.let { signatureBitmap ->
+        layoutManager.draw { it.drawBitmap(signatureBitmap, null, signatureRect, null) }
+    }
+    layoutManager.advanceY(signatureBoxHeight)
+
+    layoutManager.draw{ canvas ->
+        canvas.drawLine(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos, PdfDimens.BODY_PAINT)
+        canvas.drawText("Signature #$sectionNumber", PdfDimens.MARGIN, layoutManager.yPos + PdfDimens.LINE_SPACING, PdfDimens.HEADER_PAINT)
+    }
+    layoutManager.advanceY(PdfDimens.LINE_SPACING * 2)
+    
+    // Draw images associated with this section
+    val sectionImages = images.filter { it.sectionIndex == sectionNumber - 1 } // sectionNumber is 1-based, sectionIndex is 0-based
+    if (sectionImages.isNotEmpty()) {
+        layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
+        layoutManager.draw { canvas ->
+            canvas.drawText("Attached Images:", PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.HEADER_PAINT)
+        }
+        layoutManager.advanceY(PdfDimens.LINE_SPACING)
+        
+        sectionImages.forEach { formImage ->
+            byteArrayToBitmap(formImage.imageData)?.let { bmp ->
+                // Calculate scale to fit width, but don't upscale if image is smaller
+                val widthScale = if (bmp.width > PdfDimens.IMAGE_MAX_WIDTH) {
+                    PdfDimens.IMAGE_MAX_WIDTH / bmp.width.toFloat()
+                } else {
+                    1.0f // Don't upscale if image is smaller than max width
+                }
+
+                // Calculate scale to fit height, but don't upscale if image is smaller
+                val heightScale = if (bmp.height > PdfDimens.IMAGE_MAX_HEIGHT) {
+                    PdfDimens.IMAGE_MAX_HEIGHT / bmp.height.toFloat()
+                } else {
+                    1.0f // Don't upscale if image is smaller than max height
+                }
+
+                // Use the smaller scale to ensure image fits both dimensions
+                val scale = min(widthScale, heightScale)
+
+                val scaledWidth = bmp.width * scale
+                val scaledHeight = bmp.height * scale
+
+                // Check if we need to start a new page for this image
+                if (layoutManager.yPos + scaledHeight > PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN) {
+                    layoutManager.startNewPage()
+                }
+
+                val xPos = PdfDimens.MARGIN + (PdfDimens.CONTENT_WIDTH - scaledWidth) / 2
+                val destRect = RectF(xPos, layoutManager.yPos, xPos + scaledWidth, layoutManager.yPos + scaledHeight)
+
+                layoutManager.draw { canvas ->
+                    canvas.drawBitmap(bmp, null, destRect, null)
+                }
+
+                // Add spacing between images (using section spacing for better visual separation)
+                layoutManager.advanceY(scaledHeight + PdfDimens.SECTION_SPACING / 2)
+            }
+        }
+    }
+    
+    layoutManager.advanceY(PdfDimens.SECTION_SPACING)
+}
+
+/**
+ * Draws all content for the Stations section, including item sections.
+ */
+private fun drawStationsSectionContent(layoutManager: PdfLayoutManager, form: FormEntry, images: List<FormImage>, sections: List<StationsItemSectionEntity>) {
+    drawSubHeader(layoutManager, "Stations Information")
+    drawStationsBasicInfo(layoutManager, form)
+    
+    // Draw item sections
+    if (sections.isNotEmpty()) {
+        sections.forEachIndexed { index, section ->
+            drawStationsItemSection(layoutManager, index + 1, section, images)
+        }
+    } else {
+        // Draw default section if no sections exist
+        drawStationsItemSection(layoutManager, 1, StationsItemSectionEntity(
+            sectionRunNumber = form.stationsRun ?: "",
+            totes = form.stationsTotes ?: "",
+            addOns = form.stationsAddOns ?: "",
+            extra = form.stationsExtra ?: "",
+            printName = form.stationsPrintSignatureOne ?: "",
+            signature = form.stationsSignatureOne
+        ), images)
+    }
+    
+    // Draw non-section images (those with sectionIndex = -1)
+    val nonSectionImages = images.filter { it.sectionIndex == -1 }
+    if (nonSectionImages.isNotEmpty()) {
+        drawAttachedImages(layoutManager, nonSectionImages)
+    }
+}
+

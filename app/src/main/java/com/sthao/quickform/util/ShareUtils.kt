@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.core.content.FileProvider
-import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormEntryWithImagesAndSections
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,7 +20,7 @@ import java.io.File
  */
 fun shareFormsAsPdf(
     context: Context,
-    forms: List<FormEntryWithImages>,
+    forms: List<FormEntryWithImagesAndSections>,
     scope: CoroutineScope
 ) {
     if (forms.isEmpty()) {
