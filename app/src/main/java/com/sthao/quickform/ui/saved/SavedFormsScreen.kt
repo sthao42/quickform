@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.sthao.quickform.FormEntryWithImages
+import com.sthao.quickform.FormEntryWithImagesAndSections
 import com.sthao.quickform.FormListItem
 import com.sthao.quickform.ui.components.SelectionAppBar
 import com.sthao.quickform.ui.viewmodel.FormEvent
@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SavedFormsScreen(
     formViewModel: FormViewModel,
-    onEntryClick: (FormEntryWithImages) -> Unit,
+    onEntryClick: (FormEntryWithImagesAndSections) -> Unit,
 ) {
     // FIX: Updated to use 'savedForms' to match the refactored ViewModel.
     val forms by formViewModel.savedForms.collectAsState()
@@ -157,22 +157,22 @@ fun SavedFormsScreen(
                         onClick = {
                             if (isInSelectionMode) {
                                 // Toggles selection for the item in selection mode.
-                                selectedIds = if (it.id in selectedIds) {
-                                    selectedIds - it.id
+                                selectedIds = if (formListItem.id in selectedIds) {
+                                    selectedIds - formListItem.id
                                 } else {
-                                    selectedIds + it.id
+                                    selectedIds + formListItem.id
                                 }
                             } else {
                                 // Fetches the full form details on demand before navigating.
                                 scope.launch {
-                                    val fullEntry = formViewModel.getFormById(it.id).first()
+                                    val fullEntry = formViewModel.getFormWithSectionsById(formListItem.id).first()
                                     onEntryClick(fullEntry)
                                 }
                             }
                         },
                         onLongClick = {
                             // Enters selection mode on long click.
-                            selectedIds = selectedIds + it.id
+                            selectedIds = selectedIds + formListItem.id
                         }
                     )
                 }

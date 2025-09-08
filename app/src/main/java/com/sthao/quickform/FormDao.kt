@@ -20,6 +20,12 @@ interface FormDao {
     @Query("DELETE FROM form_images WHERE formEntryId = :formEntryId")
     suspend fun deleteImagesForForm(formEntryId: Long)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertStationsItemSections(sections: List<StationsItemSectionEntity>)
+
+    @Query("DELETE FROM stations_item_sections WHERE formEntryId = :formEntryId")
+    suspend fun deleteStationsItemSectionsForForm(formEntryId: Long)
+
 
     /**
      * Saves a form entry and its images in a single, atomic transaction.
@@ -38,15 +44,43 @@ interface FormDao {
         }
     }
 
+    /**
+     * Saves a form entry, its images, and its stations item sections in a single, atomic transaction.
+     * This ensures data integrity by preventing partial saves.
+     */
+    @Transaction
+    suspend fun saveFormWithImagesAndSections(formEntry: FormEntry, images: List<FormImage>, sections: List<StationsItemSectionEntity>) {
+        // Upsert the main FormEntry and get its ID.
+        val entryId = upsertFormEntry(formEntry)
+        // Delete any old images to ensure a clean slate.
+        deleteImagesForForm(entryId)
+        // Delete any old stations item sections to ensure a clean slate.
+        deleteStationsItemSectionsForForm(entryId)
+        // Associate the new images with the FormEntry's ID and insert them.
+        if (images.isNotEmpty()) {
+            val imagesWithId = images.map { it.copy(formEntryId = entryId) }
+            upsertImages(imagesWithId)
+        }
+        // Associate the new sections with the FormEntry's ID and insert them.
+        if (sections.isNotEmpty()) {
+            val sectionsWithId = sections.map { it.copy(formEntryId = entryId) }
+            upsertStationsItemSections(sectionsWithId)
+        }
+    }
+
 
     // --- Queries for retrieving full form data ---
     @Transaction
     @Query("SELECT * FROM form_entries WHERE id = :id")
-    fun getFormWithImagesById(id: Long): Flow<FormEntryWithImages>
+    fun getFormWithImagesAndSectionsById(id: Long): Flow<FormEntryWithImagesAndSections>
 
     @Transaction
     @Query("SELECT * FROM form_entries WHERE id IN (:ids)")
-    suspend fun getFormsWithImagesByIds(ids: List<Long>): List<FormEntryWithImages>
+    suspend fun getFormsWithImagesByIds(ids: List<Long>): List<FormEntryWithImagesAndSections>
+
+    @Transaction
+    @Query("SELECT * FROM form_entries WHERE id IN (:ids)")
+    suspend fun getFormsWithImagesAndSectionsByIds(ids: List<Long>): List<FormEntryWithImagesAndSections>
 
 
     // --- Queries for lightweight or specific data ---

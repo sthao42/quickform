@@ -28,8 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
@@ -193,7 +193,7 @@ fun FabRow(
             onClick = onNewEntry,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        ) { Icon(Icons.Filled.Add, contentDescription = "New Entry") }
+        ) { Icon(Icons.Filled.PostAdd, contentDescription = "New Entry", tint = Color.White) }
 
         FloatingActionButton(
             onClick = onSaveEntry,

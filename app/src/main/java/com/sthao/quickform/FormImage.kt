@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
  * @param formEntryId The ID of the FormEntry this image belongs to.
  * @param imageType A string to distinguish between "PICKUP" and "DROPOFF" images.
  * @param imageData The downsampled image data stored as a byte array.
+ * @param sectionIndex The index of the section this image belongs to (for Stations item sections).
  */
 @Entity(
     tableName = "form_images",
@@ -28,7 +29,8 @@ data class FormImage(
     val id: Long = 0,
     val formEntryId: Long,
     val imageType: String,
-    val imageData: ByteArray
+    val imageData: ByteArray,
+    val sectionIndex: Int = -1 // -1 for non-section images, >= 0 for section images
 ) {
     // Overriding equals and hashCode is necessary for robust data class behavior
     // when a property is a ByteArray.
@@ -41,15 +43,15 @@ data class FormImage(
         if (id != other.id) return false
         if (formEntryId != other.formEntryId) return false
         if (imageType != other.imageType) return false
-        if (!imageData.contentEquals(other.imageData)) return false
-
-        return true
+        if (sectionIndex != other.sectionIndex) return false
+        return imageData.contentEquals(other.imageData)
     }
 
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + formEntryId.hashCode()
         result = 31 * result + imageType.hashCode()
+        result = 31 * result + sectionIndex
         result = 31 * result + imageData.contentHashCode()
         return result
     }
