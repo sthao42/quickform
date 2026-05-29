@@ -1,15 +1,10 @@
 package com.sthao.quickform.ui.pickup
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,13 +51,13 @@ fun PickupScreen(
     onRunNumberChange: (String) -> Unit,
 ) {
     // Manages the visibility state of the date picker dialog.
-    var dateDialogOpen by remember { mutableStateOf(false) }
+    var dateDialogOpen by remember { mutableStateOf(value = false) }
     val datePickerState = rememberDatePickerState()
     val dateFormat = remember { SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault()) }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Section: Basic Info
         Card(
@@ -75,7 +69,7 @@ fun PickupScreen(
                     "General Information",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
 
                 // Interaction source to detect when the read-only date field is clicked.
@@ -96,19 +90,21 @@ fun PickupScreen(
                     readOnly = true,
                     interactionSource = interactionSource,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
 
                 if (dateDialogOpen) {
                     DatePickerDialog(
                         onDismissRequest = { dateDialogOpen = false },
                         confirmButton = {
-                            TextButton(onClick = {
-                                datePickerState.selectedDateMillis?.let {
-                                    onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.DATE, dateFormat.format(Date(it))))
-                                }
-                                dateDialogOpen = false
-                            }) { Text("OK") }
+                            TextButton(
+                                onClick = {
+                                    datePickerState.selectedDateMillis?.let {
+                                        onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.DATE, dateFormat.format(Date(it))))
+                                    }
+                                    dateDialogOpen = false
+                                },
+                            ) { Text("OK") }
                         },
                         dismissButton = {
                             TextButton(onClick = { dateDialogOpen = false }) { Text("Cancel") }
@@ -123,7 +119,7 @@ fun PickupScreen(
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.DRIVER_NAME, it)) },
                     label = { Text("Driver Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 OutlinedTextField(
                     value = state.driverNumber,
@@ -131,7 +127,7 @@ fun PickupScreen(
                     label = { Text("Driver Number") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 OutlinedTextField(
                     value = runNumber,
@@ -139,14 +135,14 @@ fun PickupScreen(
                     label = { Text("Run #") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 OutlinedTextField(
                     value = state.facilityName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FACILITY_NAME, it)) },
                     label = { Text("Facility Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
             }
         }
@@ -161,22 +157,22 @@ fun PickupScreen(
                     "Items Summary",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 ItemRow("Frozen", state.frozenBags, state.frozenQuantity) { bags, qty ->
-                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_BAGS, bags))
-                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_QUANTITY, qty))
+                    bags?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_BAGS, it)) }
+                    qty?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_QUANTITY, it)) }
                 }
 
                 ItemRow("Refrigerated", state.refrigeratedBags, state.refrigeratedQuantity) { bags, qty ->
-                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_BAGS, bags))
-                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_QUANTITY, qty))
+                    bags?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_BAGS, it)) }
+                    qty?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_QUANTITY, it)) }
                 }
 
                 ItemRow("Room Temp", state.roomTempBags, state.roomTempQuantity) { bags, qty ->
-                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_BAGS, bags))
-                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_QUANTITY, qty))
+                    bags?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_BAGS, it)) }
+                    qty?.let { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_QUANTITY, it)) }
                 }
 
                 OutlinedTextField(
@@ -184,7 +180,7 @@ fun PickupScreen(
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.NOTES, it)) },
                     label = { Text("Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
             }
         }
@@ -198,20 +194,21 @@ fun PickupScreen(
                 Text(
                     "Dispatcher Signature",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 OutlinedTextField(
                     value = state.printSignatureOne,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_ONE, it)) },
                     label = { Text("Print Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 SignatureBox(
                     label = "Signature",
                     bitmap = state.signatureOne,
-                    onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 1, bmp)) },
-                )
+                ) { bmp ->
+                    onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 1, bmp))
+                }
             }
         }
 
@@ -224,7 +221,7 @@ fun PickupScreen(
                 Text(
                     "Additional Supplies",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 QuantityRow("Boxes", state.boxesQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.BOXES_QUANTITY, it)) }
@@ -238,7 +235,7 @@ fun PickupScreen(
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ADDITIONAL_NOTES, it)) },
                     label = { Text("Additional Notes") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
             }
         }
@@ -252,7 +249,7 @@ fun PickupScreen(
                 MultiImagePicker(
                     images = state.images,
                     onImageAdded = { uri -> onEvent(FormEvent.AddImage(FormSection.PICKUP, uri)) },
-                    onImageRemoved = { uri -> onEvent(FormEvent.RemoveImage(FormSection.PICKUP, uri)) }
+                    onImageRemoved = { uri -> onEvent(FormEvent.RemoveImage(FormSection.PICKUP, uri)) },
                 )
             }
         }
@@ -266,23 +263,22 @@ fun PickupScreen(
                 Text(
                     "Driver Signature",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 OutlinedTextField(
                     value = state.printSignatureTwo,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_TWO, it)) },
                     label = { Text("Print Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
                 )
                 SignatureBox(
                     label = "Signature",
                     bitmap = state.signatureTwo,
-                    onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 2, bmp)) },
-                )
+                ) { bmp ->
+                    onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 2, bmp))
+                }
             }
         }
     }
 }
-
-

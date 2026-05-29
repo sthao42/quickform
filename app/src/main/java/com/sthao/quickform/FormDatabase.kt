@@ -87,7 +87,8 @@ abstract class FormDatabase : RoomDatabase() {
         private val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Create the stations_item_sections table
-                db.execSQL("""
+                db.execSQL(
+                    """
                     CREATE TABLE IF NOT EXISTS `stations_item_sections` (
                         `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                         `formEntryId` INTEGER NOT NULL,
@@ -99,7 +100,8 @@ abstract class FormDatabase : RoomDatabase() {
                         `signature` BLOB,
                         FOREIGN KEY(`formEntryId`) REFERENCES `form_entries`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
                     )
-                """.trimIndent())
+                    """.trimIndent(),
+                )
                 
                 // Create index for formEntryId
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_stations_item_sections_formEntryId` ON `stations_item_sections` (`formEntryId`)")

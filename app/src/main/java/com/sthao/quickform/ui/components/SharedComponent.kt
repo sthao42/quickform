@@ -22,13 +22,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.Clear
@@ -89,7 +87,6 @@ private object Dimens {
     val ImagePreviewSize = Constants.IMAGE_PREVIEW_SIZE_DP.dp
     val DialogCanvasHeight = Constants.DIALOG_CANVAS_HEIGHT_DP.dp
     val LogoHeight = Constants.LOGO_HEIGHT_DP.dp
-    val FabSize = Constants.FAB_SIZE_DP.dp
 }
 
 @Stable
@@ -100,7 +97,7 @@ private class SignatureCanvasState(initialBitmap: Bitmap?) {
     var pathTicker by mutableIntStateOf(0)
 
     val isBlank: Boolean
-        get() = effectiveBitmap == null && newPaths.isEmpty()
+        get() = (effectiveBitmap == null && newPaths.isEmpty())
 
     fun addPath() {
         newPaths.add(Path().apply { addPath(currentPath) })
@@ -153,68 +150,6 @@ fun TopBanner() {
     )
 }
 
-
-@Composable
-fun DotsIndicator(
-    pageCount: Int,
-    selectedIndex: Int,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(pageCount) { index ->
-            val isSelected = index == selectedIndex
-            Box(
-                modifier =
-                    Modifier
-                        .padding(horizontal = 4.dp)
-                        .height(8.dp)
-                        .width(if (isSelected) 24.dp else 8.dp)
-                        .clip(CircleShape)
-                        .background(
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                        ),
-            )
-        }
-    }
-}
-
-@Composable
-fun FabRow(
-    onNewEntry: () -> Unit,
-    onSaveEntry: () -> Unit,
-    onNavigateToSaved: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        FloatingActionButton(
-            onClick = onNewEntry,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        ) { Icon(Icons.Filled.PostAdd, contentDescription = "New Entry", tint = Color.White) }
-
-        FloatingActionButton(
-            onClick = onSaveEntry,
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(Dimens.FabSize),
-        ) { Icon(Icons.Filled.Done, contentDescription = "Save Entry") }
-
-        FloatingActionButton(
-            onClick = onNavigateToSaved,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        ) { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "View Saved Entries") }
-    }
-}
-
 @Composable
 private fun SignatureCaptureDialog(
     initialBitmap: Bitmap?,
@@ -227,7 +162,7 @@ private fun SignatureCaptureDialog(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier
@@ -324,14 +259,15 @@ fun SignatureBox(
     bitmap: Bitmap?,
     onBitmapChange: (Bitmap?) -> Unit,
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(value = false) }
 
     if (showDialog) {
         SignatureCaptureDialog(
             initialBitmap = bitmap,
-            onSave = { onBitmapChange(it) },
-            onDismiss = { showDialog = false },
-        )
+            onSave = onBitmapChange,
+        ) {
+            showDialog = false
+        }
     }
 
     Column {
@@ -367,10 +303,10 @@ fun MultiImagePicker(
     images: List<Uri>,
     onImageAdded: (Uri) -> Unit,
     onImageRemoved: (Uri) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         uri?.let(onImageAdded)
     }
@@ -381,18 +317,18 @@ fun MultiImagePicker(
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             AddImageButton(
                 onClick = {
                     imagePickerLauncher.launch("image/*")
-                }
+                },
             )
 
             images.forEach { imageUri ->
                 ImageThumbnail(
                     uri = imageUri,
-                    onRemove = { onImageRemoved(imageUri) }
+                    onRemove = { onImageRemoved(imageUri) },
                 )
             }
         }
@@ -403,12 +339,12 @@ fun MultiImagePicker(
 private fun ImageThumbnail(
     uri: Uri,
     onRemove: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .size(Dimens.ImagePreviewSize)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp)),
     ) {
         Image(
             painter = rememberAsyncImagePainter(uri),
@@ -423,16 +359,16 @@ private fun ImageThumbnail(
                 .padding(4.dp)
                 .background(
                     color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.6f),
-                    shape = CircleShape
+                    shape = CircleShape,
                 ),
             colors = IconButtonDefaults.iconButtonColors(
-                contentColor = Color.White
-            )
+                contentColor = Color.White,
+            ),
         ) {
             Icon(
                 imageVector = Icons.Default.Clear,
                 contentDescription = "Remove Image",
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(16.dp),
             )
         }
     }
@@ -441,7 +377,7 @@ private fun ImageThumbnail(
 @Composable
 private fun AddImageButton(
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         onClick = onClick,
@@ -449,18 +385,18 @@ private fun AddImageButton(
         shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = Icons.Default.AddAPhoto,
                     contentDescription = "Add Image",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
                 Spacer(Modifier.height(4.dp))
                 Text("Add Image", style = MaterialTheme.typography.bodySmall)
@@ -511,7 +447,7 @@ fun ItemRow(
     label: String,
     bags: String,
     quantity: String,
-    onUpdate: (String?, String?) -> Unit
+    onUpdate: (String?, String?) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -525,7 +461,7 @@ fun ItemRow(
             label = { Text("Bags") },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
         )
         OutlinedTextField(
             value = quantity,
@@ -533,7 +469,7 @@ fun ItemRow(
             label = { Text("Qty") },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
         )
     }
 }
@@ -542,7 +478,7 @@ fun ItemRow(
 fun QuantityRow(
     label: String,
     quantity: String,
-    onUpdate: (String) -> Unit
+    onUpdate: (String) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -556,7 +492,7 @@ fun QuantityRow(
             label = { Text("Quantity") },
             modifier = Modifier.weight(1f),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
         )
     }
 }

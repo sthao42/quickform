@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Storefront
-import com.sthao.quickform.ui.components.DotsIndicator
 import com.sthao.quickform.ui.components.TopBanner
 import com.sthao.quickform.ui.dropoff.DropoffScreen
 import com.sthao.quickform.ui.pickup.PickupScreen
@@ -59,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
                 val context = LocalContext.current
                 val coroutineScope = rememberCoroutineScope()
-                val appPagerState = rememberPagerState(pageCount = { 4 })
+                val appPagerState = rememberPagerState { 4 }
                 val focusManager = LocalFocusManager.current
 
                 val nestedScrollConnection = remember {
@@ -87,19 +85,19 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
                                 label = { Text("Pickup") },
                                 selected = appPagerState.currentPage == 0,
-                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(0) } }
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(0) } },
                             )
                             NavigationBarItem(
                                 icon = { Icon(Icons.Default.PinDrop, contentDescription = null) },
                                 label = { Text("Dropoff") },
                                 selected = appPagerState.currentPage == 1,
-                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(1) } }
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(1) } },
                             )
                             NavigationBarItem(
                                 icon = { Icon(Icons.Default.Storefront, contentDescription = null) },
                                 label = { Text("Stations") },
                                 selected = appPagerState.currentPage == 2,
-                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(2) } }
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(2) } },
                             )
                             NavigationBarItem(
                                 icon = { Icon(Icons.Default.Storage, contentDescription = null) },
@@ -157,12 +155,11 @@ class MainActivity : ComponentActivity() {
                                             state = pickupState,
                                             onEvent = formViewModel::onEvent,
                                             runNumber = pickupState.run,
-                                            onRunNumberChange = { newRun ->
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
-                                            }
-                                        )
+                                        ) { newRun ->
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
+                                        }
                                     }
                                 1 ->
                                     Column(modifier = formPageModifier) {
@@ -170,12 +167,11 @@ class MainActivity : ComponentActivity() {
                                             state = dropoffState,
                                             onEvent = formViewModel::onEvent,
                                             runNumber = dropoffState.run,
-                                            onRunNumberChange = { newRun ->
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
-                                                formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
-                                            }
-                                        )
+                                        ) { newRun ->
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.DROPOFF, FormFieldType.RUN, newRun))
+                                            formViewModel.onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.RUN, newRun))
+                                        }
                                     }
                                 2 ->
                                     Column(modifier = formPageModifier) {

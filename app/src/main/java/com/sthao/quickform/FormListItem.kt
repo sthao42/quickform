@@ -9,5 +9,5 @@ data class FormListItem(
     val id: Long,
     val entryTitle: String,
     val pickupRun: String,
-    val pickupFacilityName: String
+    val pickupFacilityName: String,
 )

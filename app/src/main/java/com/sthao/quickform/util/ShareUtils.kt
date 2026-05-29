@@ -21,7 +21,7 @@ import java.io.File
 fun shareFormsAsPdf(
     context: Context,
     forms: List<FormEntryWithImagesAndSections>,
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) {
     if (forms.isEmpty()) {
         Toast.makeText(context, "No forms selected to share.", Toast.LENGTH_SHORT).show()
@@ -35,7 +35,7 @@ fun shareFormsAsPdf(
 
         // Switch back to the main thread to show toasts or start activities.
         withContext(Dispatchers.Main) {
-            if (pdfFile != null && pdfFile.exists()) {
+            if ((pdfFile != null) && pdfFile.exists()) {
                 // Step 2: Get a content URI for the PDF file via a FileProvider.
                 // This is the modern, secure way to grant other apps access to your app's files.
                 val pdfUri = FileProvider.getUriForFile(

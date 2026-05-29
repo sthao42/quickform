@@ -44,7 +44,15 @@ fun downsampleImageFromUri(context: Context, uri: Uri, maxDimension: Int): ByteA
         } ?: resizedBitmap // Use the resized bitmap if EXIF data can't be read.
 
         // Compress the final, rotated bitmap into a JPEG byte array.
-        return bitmapToJpegByteArray(finalBitmap)
+        val result = bitmapToJpegByteArray(finalBitmap)
+        
+        // Recycle bitmaps to free up memory
+        if (finalBitmap != resizedBitmap) {
+            finalBitmap.recycle()
+        }
+        resizedBitmap.recycle()
+
+        return result
     } catch (e: Exception) {
         e.printStackTrace()
         return null
@@ -58,12 +66,12 @@ private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int,
     val (height: Int, width: Int) = options.outHeight to options.outWidth
     var inSampleSize = 1
 
-    if (height > reqHeight || width > reqWidth) {
+    if ((height > reqHeight) || (width > reqWidth)) {
         val halfHeight: Int = height / 2
         val halfWidth: Int = width / 2
 
         // height and width larger than the requested height and width.
-        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+        while (((halfHeight / inSampleSize) >= reqHeight) && ((halfWidth / inSampleSize) >= reqWidth)) {
             inSampleSize *= 2
         }
     }
@@ -107,6 +115,7 @@ fun byteArrayToBitmap(byteArray: ByteArray): Bitmap? {
  */
 private fun rotateBitmap(bitmap: Bitmap, orientation: Int): Bitmap {
     val matrix = Matrix()
+    var shouldRotate = true
     when (orientation) {
         ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
         ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
@@ -121,9 +130,16 @@ private fun rotateBitmap(bitmap: Bitmap, orientation: Int): Bitmap {
             matrix.postRotate(-90f)
             matrix.preScale(-1.0f, 1.0f)
         }
-        else -> return bitmap // Return original bitmap if no rotation is needed.
+        else -> shouldRotate = false
     }
-    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+
+    if (!shouldRotate) return bitmap
+
+    val rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    if (rotatedBitmap != bitmap) {
+        bitmap.recycle()
+    }
+    return rotatedBitmap
 }
 
 /**

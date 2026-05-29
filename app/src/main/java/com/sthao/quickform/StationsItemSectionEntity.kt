@@ -15,7 +15,7 @@ import androidx.room.PrimaryKey
             entity = FormEntry::class,
             parentColumns = ["id"],
             childColumns = ["formEntryId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         )
     ],
     indices = [
@@ -54,14 +54,14 @@ data class StationsItemSectionEntity(
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + formEntryId.hashCode()
-        result = 31 * result + sectionIndex
-        result = 31 * result + sectionRunNumber.hashCode()
-        result = 31 * result + totes.hashCode()
-        result = 31 * result + addOns.hashCode()
-        result = 31 * result + extra.hashCode()
-        result = 31 * result + printName.hashCode()
-        result = 31 * result + signature.contentHashCode()
+        result = (31 * result) + formEntryId.hashCode()
+        result = (31 * result) + sectionIndex
+        result = (31 * result) + sectionRunNumber.hashCode()
+        result = (31 * result) + totes.hashCode()
+        result = (31 * result) + addOns.hashCode()
+        result = (31 * result) + extra.hashCode()
+        result = (31 * result) + printName.hashCode()
+        result = (31 * result) + signature.contentHashCode()
         return result
     }
 }

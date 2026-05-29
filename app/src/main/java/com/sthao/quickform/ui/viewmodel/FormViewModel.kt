@@ -106,7 +106,7 @@ data class StationsUiState(
     val driverNumber: String = "",
     val run: String = "",
     val facilityName: String = "",
-    val images: List<Uri> = emptyList() // Moved printName, signature, totes, addOns, extra to item sections
+    val images: List<Uri> = emptyList(), // Moved printName, signature, totes, addOns, extra to item sections
 )
 
 class FormViewModel(application: Application) : AndroidViewModel(application) {
@@ -291,9 +291,11 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         val currentStationsState = _stationsState.value // Added for Stations
 
         // Updated validation to include Stations facility name
-        if (currentPickupState.facilityName.length < MIN_FACILITY_NAME_LENGTH &&
-            currentDropoffState.facilityName.length < MIN_FACILITY_NAME_LENGTH &&
-            currentStationsState.facilityName.length < MIN_FACILITY_NAME_LENGTH) {
+        if (
+            (currentPickupState.facilityName.length < MIN_FACILITY_NAME_LENGTH) &&
+                (currentDropoffState.facilityName.length < MIN_FACILITY_NAME_LENGTH) &&
+                (currentStationsState.facilityName.length < MIN_FACILITY_NAME_LENGTH)
+        ) {
             Toast.makeText(context, TOAST_FACILITY_NAME_EMPTY, Toast.LENGTH_SHORT).show()
             return@launch
         }
@@ -372,7 +374,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             stationsAddOns = "", // Moved to item sections
             stationsExtra = "", // Moved to item sections
             stationsPrintSignatureOne = "", // Moved to item sections
-            stationsSignatureOne = null // Moved to item sections
+            stationsSignatureOne = null, // Moved to item sections
         )
 
         val imagesToSave = mutableListOf<FormImage>()
@@ -381,12 +383,13 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         fun processImages(images: List<Uri>, imageType: String, sectionIndex: Int = -1) {
             images.forEach { uri ->
                 downsampleImageFromUri(context, uri, Constants.IMAGE_MAX_DIMENSION)?.let { imageData ->
-                    imagesToSave.add(FormImage(
+                    val formImage = FormImage(
                         imageType = imageType,
                         imageData = imageData,
                         formEntryId = 0,
-                        sectionIndex = sectionIndex
-                    ))
+                        sectionIndex = sectionIndex,
+                    )
+                    imagesToSave.add(formImage)
                 }
             }
         }
@@ -413,7 +416,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
                 addOns = section.addOns,
                 extra = section.extra,
                 printName = section.printName,
-                signature = signatureBytes
+                signature = signatureBytes,
             )
         }
 
@@ -428,9 +431,8 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
     fun loadFormWithSections(id: Long) {
         viewModelScope.launch {
             try {
-                repository.getFormWithImagesAndSectionsById(id).first().let { formWithSections ->
-                    loadFormWithSections(formWithSections)
-                }
+                val formWithSections = repository.getFormWithImagesAndSectionsById(id).first()
+                loadFormWithSections(formWithSections)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -448,9 +450,10 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
 
         // Helper function to convert images
         fun convertImages(imageType: String, prefix: String): List<Uri> {
-            return formWithSections.images
+            return formWithSections.images.asSequence()
                 .filter { it.imageType == imageType && it.sectionIndex == -1 }
                 .mapNotNull { byteArrayToUri(context, it.imageData, "${prefix}_${it.id}${Constants.PNG_EXTENSION}") }
+                .toList()
         }
         
         val pickupImageUris = convertImages(IMAGE_TYPE_PICKUP, "pickup")
@@ -526,9 +529,10 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             val signatureBitmap = sectionEntity.signature?.let { byteArrayToBitmap(it) }
             
             // Get images for this section
-            val sectionImages = formWithSections.images
+            val sectionImages = formWithSections.images.asSequence()
                 .filter { it.imageType == Constants.IMAGE_TYPE_STATIONS && it.sectionIndex == sectionEntity.sectionIndex }
                 .mapNotNull { byteArrayToUri(context, it.imageData, "stations_${it.id}_section_${sectionEntity.sectionIndex}${Constants.PNG_EXTENSION}") }
+                .toList()
             
             StationsItemSection(
                 id = sectionEntity.sectionIndex,

@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import com.sthao.quickform.FormEntry
 import com.sthao.quickform.FormEntryWithImagesAndSections
@@ -36,6 +37,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.min
+
+private const val TAG = "PdfExporter"
 
 // Defines common dimensions and styling for the PDF layout.
 private object PdfDimens {
@@ -71,14 +74,14 @@ fun exportToPdfForSharing(context: Context, forms: List<FormEntryWithImagesAndSe
         }
 
         val timestamp = SimpleDateFormat(DATE_FORMAT_FILENAME, Locale.US).format(Date())
-        val fileName = "QuickForm_Export_${timestamp}.pdf"
+        val fileName = "QuickForm_Export_$timestamp.pdf"
         val outputDir = File(context.cacheDir, SHARED_PDFS_DIR).apply { mkdirs() }
         val outputFile = File(outputDir, fileName)
 
         outputFile.outputStream().use { pdfDocument.writeTo(it) }
         outputFile
     } catch (e: IOException) {
-        e.printStackTrace()
+        Log.e(TAG, "Error exporting for sharing", e)
         null
     } finally {
         pdfDocument.close()
@@ -119,7 +122,7 @@ fun exportMultipleFormsAsPdf(context: Context, formsWithIds: List<Pair<FormEntry
             }
         }
     } catch (e: IOException) {
-        e.printStackTrace()
+        Log.e(TAG, "Error exporting multiple forms", e)
         Toast.makeText(context, "$TOAST_ERROR_EXPORTING: ${e.message}", Toast.LENGTH_LONG).show()
     } finally {
         pdfDocument.close()
@@ -153,7 +156,7 @@ private class PdfLayoutManager(private val document: PdfDocument) {
     }
 
     fun prepareToDraw(spaceNeeded: Float) {
-        if (yPos + spaceNeeded > PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN) {
+        if (yPos + spaceNeeded > (PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN)) {
             startNewPage()
         }
     }
@@ -397,7 +400,7 @@ private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry
             "Colored Bags" to form.pickupColoredBagsQuantity,
             "Mails" to form.pickupMailsQuantity,
             "Money Bags" to form.pickupMoneyBagsQuantity,
-            "Others" to form.pickupOthersQuantity
+            "Others" to form.pickupOthersQuantity,
         )
     } else {
         listOf(
@@ -405,7 +408,7 @@ private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry
             "Colored Bags" to form.dropoffColoredBagsQuantity,
             "Mails" to form.dropoffMailsQuantity,
             "Money Bags" to form.dropoffMoneyBagsQuantity,
-            "Others" to form.dropoffOthersQuantity
+            "Others" to form.dropoffOthersQuantity,
         )
     }
 
@@ -470,6 +473,7 @@ private fun drawSignature(layoutManager: PdfLayoutManager, form: FormEntry, isPi
     val signatureRect = RectF(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos + signatureBoxHeight)
     byteArrayToBitmap(signatureByteArray ?: byteArrayOf())?.let { signatureBitmap ->
         layoutManager.draw { it.drawBitmap(signatureBitmap, null, signatureRect, null) }
+        signatureBitmap.recycle()
     }
     layoutManager.advanceY(signatureBoxHeight)
 
@@ -527,6 +531,7 @@ private fun drawAttachedImages(layoutManager: PdfLayoutManager, images: List<For
                 layoutManager.draw { canvas ->
                     canvas.drawBitmap(bmp, null, destRect, null)
                 }
+                bmp.recycle()
 
                 // Add spacing between images (using section spacing for better visual separation)
                 layoutManager.advanceY(scaledHeight + PdfDimens.SECTION_SPACING / 2)
@@ -611,6 +616,7 @@ private fun drawStationsItemSection(layoutManager: PdfLayoutManager, sectionNumb
     val signatureRect = RectF(PdfDimens.MARGIN, layoutManager.yPos, PdfDimens.MARGIN + signatureBoxWidth, layoutManager.yPos + signatureBoxHeight)
     byteArrayToBitmap(section.signature ?: byteArrayOf())?.let { signatureBitmap ->
         layoutManager.draw { it.drawBitmap(signatureBitmap, null, signatureRect, null) }
+        signatureBitmap.recycle()
     }
     layoutManager.advanceY(signatureBoxHeight)
 
@@ -662,6 +668,7 @@ private fun drawStationsItemSection(layoutManager: PdfLayoutManager, sectionNumb
                 layoutManager.draw { canvas ->
                     canvas.drawBitmap(bmp, null, destRect, null)
                 }
+                bmp.recycle()
 
                 // Add spacing between images (using section spacing for better visual separation)
                 layoutManager.advanceY(scaledHeight + PdfDimens.SECTION_SPACING / 2)
@@ -686,14 +693,19 @@ private fun drawStationsSectionContent(layoutManager: PdfLayoutManager, form: Fo
         }
     } else {
         // Draw default section if no sections exist
-        drawStationsItemSection(layoutManager, 1, StationsItemSectionEntity(
-            sectionRunNumber = form.stationsRun ?: "",
-            totes = form.stationsTotes ?: "",
-            addOns = form.stationsAddOns ?: "",
-            extra = form.stationsExtra ?: "",
-            printName = form.stationsPrintSignatureOne ?: "",
-            signature = form.stationsSignatureOne
-        ), images)
+        drawStationsItemSection(
+            layoutManager,
+            1,
+            StationsItemSectionEntity(
+                sectionRunNumber = form.stationsRun ?: "",
+                totes = form.stationsTotes ?: "",
+                addOns = form.stationsAddOns ?: "",
+                extra = form.stationsExtra ?: "",
+                printName = form.stationsPrintSignatureOne ?: "",
+                signature = form.stationsSignatureOne,
+            ),
+            images,
+        )
     }
     
     // Draw non-section images (those with sectionIndex = -1)

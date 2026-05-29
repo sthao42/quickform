@@ -1,11 +1,5 @@
 package com.sthao.quickform.ui.theme
 
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -57,7 +51,7 @@ private val LightColorScheme = lightColorScheme(
     onTertiaryContainer = Color.White,
     surfaceContainer = SavedForms,
     surfaceContainerHigh = FormsSelected,
-    surfaceDim = DarkGray50
+    surfaceDim = DarkGray50,
 )
 
 // Creating theme extension properties for custom, non-standard colors.
@@ -79,10 +73,10 @@ fun QuickFormTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
@@ -94,7 +88,7 @@ fun QuickFormTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
