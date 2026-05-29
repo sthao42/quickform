@@ -22,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,12 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.sthao.quickform.ui.components.ItemRow
 import com.sthao.quickform.ui.components.MultiImagePicker
+import com.sthao.quickform.ui.components.QuantityRow
 import com.sthao.quickform.ui.components.SignatureBox
 import com.sthao.quickform.ui.theme.pickupForm
 import com.sthao.quickform.ui.viewmodel.FormEvent
@@ -54,7 +53,6 @@ import java.util.Locale
 fun PickupScreen(
     state: PickupUiState,
     onEvent: (FormEvent) -> Unit,
-    customTextFieldColors: TextFieldColors,
     runNumber: String,
     onRunNumberChange: (String) -> Unit,
 ) {
@@ -63,40 +61,34 @@ fun PickupScreen(
     val datePickerState = rememberDatePickerState()
     val dateFormat = remember { SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault()) }
 
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.pickupForm),
-        elevation = CardDefaults.cardElevation(4.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            // Header text for the form.
-            Text(
-                "Pick Up",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-            Spacer(Modifier.height(16.dp))
+        // Section: Basic Info
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "General Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-            // Interaction source to detect when the read-only date field is clicked.
-            val interactionSource = remember { MutableInteractionSource() }
-            val isPressed by interactionSource.collectIsPressedAsState()
+                // Interaction source to detect when the read-only date field is clicked.
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
 
-            // Opens the date dialog when the text field is pressed.
-            if (isPressed) {
-                LaunchedEffect(Unit) {
-                    dateDialogOpen = true
+                // Opens the date dialog when the text field is pressed.
+                if (isPressed) {
+                    LaunchedEffect(Unit) {
+                        dateDialogOpen = true
+                    }
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .border(BorderStroke(1.5.dp, Color.Gray), shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                // A read-only text field to display the selected date.
                 OutlinedTextField(
                     value = state.date,
                     onValueChange = {},
@@ -104,9 +96,9 @@ fun PickupScreen(
                     readOnly = true,
                     interactionSource = interactionSource,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
-                // The actual DatePickerDialog composable.
+
                 if (dateDialogOpen) {
                     DatePickerDialog(
                         onDismissRequest = { dateDialogOpen = false },
@@ -126,285 +118,171 @@ fun PickupScreen(
                     }
                 }
 
-                // A series of text fields for user input.
                 OutlinedTextField(
                     value = state.driverName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.DRIVER_NAME, it)) },
                     label = { Text("Driver Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = state.driverNumber,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.DRIVER_NUMBER, it)) },
                     label = { Text("Driver Number") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp)
                 )
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = runNumber,
                     onValueChange = { if (it.all(Char::isDigit)) onRunNumberChange(it) },
                     label = { Text("Run #") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp)
                 )
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = state.facilityName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FACILITY_NAME, it)) },
                     label = { Text("Facility Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
-            Spacer(Modifier.height(16.dp))
+        }
 
-            Text(
-                "Items",
-                style = MaterialTheme.typography.titleLarge,
-                textDecoration = TextDecoration.Underline,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(8.dp))
+        // Section: Items
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.pickupForm),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Items Summary",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            Column(
-                modifier = Modifier
-                    .border(BorderStroke(1.5.dp, Color.Gray), shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                // Rows of fields for capturing item quantities.
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Frozen:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.frozenBags,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_BAGS, it)) },
-                        label = { Text("Bags") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                    OutlinedTextField(
-                        value = state.frozenQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
+                ItemRow("Frozen", state.frozenBags, state.frozenQuantity) { bags, qty ->
+                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_BAGS, bags))
+                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.FROZEN_QUANTITY, qty))
                 }
-                Spacer(Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Refrigerated:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.refrigeratedBags,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_BAGS, it)) },
-                        label = { Text("Bags") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                    OutlinedTextField(
-                        value = state.refrigeratedQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
+                ItemRow("Refrigerated", state.refrigeratedBags, state.refrigeratedQuantity) { bags, qty ->
+                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_BAGS, bags))
+                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.REFRIGERATED_QUANTITY, qty))
                 }
-                Spacer(Modifier.height(8.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Room Temp:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.roomTempBags,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_BAGS, it)) },
-                        label = { Text("Bags") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                    OutlinedTextField(
-                        value = state.roomTempQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
+                ItemRow("Room Temp", state.roomTempBags, state.roomTempQuantity) { bags, qty ->
+                    if (bags != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_BAGS, bags))
+                    if (qty != null) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ROOM_TEMP_QUANTITY, qty))
                 }
+
+                OutlinedTextField(
+                    value = state.notes,
+                    onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.NOTES, it)) },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
             }
-            Spacer(Modifier.height(8.dp))
+        }
 
-            // Notes
-            OutlinedTextField(
-                value = state.notes,
-                onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.NOTES, it)) },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = customTextFieldColors,
-            )
-            Spacer(Modifier.height(8.dp))
-
-            // Print Signature One
-            OutlinedTextField(
-                value = state.printSignatureOne,
-                onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_ONE, it)) },
-                label = { Text("Print Name") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = customTextFieldColors,
-            )
-            Spacer(Modifier.height(8.dp))
-
-            // The shared component for capturing  signature one.
-            SignatureBox(
-                label = "Signature",
-                bitmap = state.signatureOne,
-                onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 1, bmp)) },
-            )
-            Spacer(Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier
-                    .border(BorderStroke(1.5.dp, Color.Gray), shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                Row(
+        // Section: Signatures 1
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Dispatcher Signature",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                OutlinedTextField(
+                    value = state.printSignatureOne,
+                    onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_ONE, it)) },
+                    label = { Text("Print Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Boxes:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.boxesQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.BOXES_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Colored Bags:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.coloredBagsQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.COLORED_BAGS_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Mails:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.mailsQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.MAILS_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Money Bags:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.moneyBagsQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.MONEY_BAGS_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("Others:", modifier = Modifier.weight(1f))
-                    OutlinedTextField(
-                        value = state.othersQuantity,
-                        onValueChange = { if (it.all(Char::isDigit)) onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.OTHERS_QUANTITY, it)) },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.weight(1f),
-                        colors = customTextFieldColors,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    )
-                }
+                    shape = RoundedCornerShape(12.dp)
+                )
+                SignatureBox(
+                    label = "Signature",
+                    bitmap = state.signatureOne,
+                    onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 1, bmp)) },
+                )
             }
-            Spacer(Modifier.height(8.dp))
+        }
 
-            OutlinedTextField(
-                value = state.additionalNotes,
-                onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ADDITIONAL_NOTES, it)) },
-                label = { Text("Additional Notes") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = customTextFieldColors,
-            )
-            Spacer(Modifier.height(16.dp))
+        // Section: Additional Items
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Additional Supplies",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
-            // Image Picker
-            MultiImagePicker(
-                images = state.images,
-                onImageAdded = { uri -> onEvent(FormEvent.AddImage(FormSection.PICKUP, uri)) },
-                onImageRemoved = { uri -> onEvent(FormEvent.RemoveImage(FormSection.PICKUP, uri)) }
-            )
-            Spacer(Modifier.height(16.dp))
+                QuantityRow("Boxes", state.boxesQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.BOXES_QUANTITY, it)) }
+                QuantityRow("Colored Bags", state.coloredBagsQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.COLORED_BAGS_QUANTITY, it)) }
+                QuantityRow("Mails", state.mailsQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.MAILS_QUANTITY, it)) }
+                QuantityRow("Money Bags", state.moneyBagsQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.MONEY_BAGS_QUANTITY, it)) }
+                QuantityRow("Others", state.othersQuantity) { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.OTHERS_QUANTITY, it)) }
 
-            // Print Signature Two
-            OutlinedTextField(
-                value = state.printSignatureTwo,
-                onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_TWO, it)) },
-                label = { Text("Print Name") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = customTextFieldColors,
-            )
-            Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = state.additionalNotes,
+                    onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.ADDITIONAL_NOTES, it)) },
+                    label = { Text("Additional Notes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        }
 
-            // The shared component for capturing a signature two.
-            SignatureBox(
-                label = "Signature",
-                bitmap = state.signatureTwo,
-                onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 2, bmp)) },
-            )
+        // Section: Images
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                MultiImagePicker(
+                    images = state.images,
+                    onImageAdded = { uri -> onEvent(FormEvent.AddImage(FormSection.PICKUP, uri)) },
+                    onImageRemoved = { uri -> onEvent(FormEvent.RemoveImage(FormSection.PICKUP, uri)) }
+                )
+            }
+        }
+
+        // Section: Signatures 2
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Driver Signature",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                OutlinedTextField(
+                    value = state.printSignatureTwo,
+                    onValueChange = { onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.PRINT_SIGNATURE_TWO, it)) },
+                    label = { Text("Print Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                SignatureBox(
+                    label = "Signature",
+                    bitmap = state.signatureTwo,
+                    onBitmapChange = { bmp -> onEvent(FormEvent.UpdateSignature(FormSection.PICKUP, 2, bmp)) },
+                )
+            }
         }
     }
 }
+
+

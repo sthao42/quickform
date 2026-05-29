@@ -22,8 +22,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.PinDrop
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Storefront
 import com.sthao.quickform.ui.components.DotsIndicator
-import com.sthao.quickform.ui.components.FabRow
 import com.sthao.quickform.ui.components.TopBanner
 import com.sthao.quickform.ui.dropoff.DropoffScreen
 import com.sthao.quickform.ui.pickup.PickupScreen
@@ -49,11 +55,11 @@ class MainActivity : ComponentActivity() {
             QuickFormTheme {
                 val pickupState by formViewModel.pickupState.collectAsState()
                 val dropoffState by formViewModel.dropoffState.collectAsState()
-                val stationsState by formViewModel.stationsState.collectAsState() // Added for Stations
+                val stationsState by formViewModel.stationsState.collectAsState()
 
                 val context = LocalContext.current
                 val coroutineScope = rememberCoroutineScope()
-                val appPagerState = rememberPagerState(pageCount = { 4 }) // Updated page count
+                val appPagerState = rememberPagerState(pageCount = { 4 })
                 val focusManager = LocalFocusManager.current
 
                 val nestedScrollConnection = remember {
@@ -75,6 +81,54 @@ class MainActivity : ComponentActivity() {
 
                 Scaffold(
                     topBar = { TopBanner() },
+                    bottomBar = {
+                        NavigationBar {
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.LocalShipping, contentDescription = null) },
+                                label = { Text("Pickup") },
+                                selected = appPagerState.currentPage == 0,
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(0) } }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.PinDrop, contentDescription = null) },
+                                label = { Text("Dropoff") },
+                                selected = appPagerState.currentPage == 1,
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(1) } }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Storefront, contentDescription = null) },
+                                label = { Text("Stations") },
+                                selected = appPagerState.currentPage == 2,
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(2) } }
+                            )
+                            NavigationBarItem(
+                                icon = { Icon(Icons.Default.Storage, contentDescription = null) },
+                                label = { Text("Saved") },
+                                selected = appPagerState.currentPage == 3,
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(3) } }
+                            )
+                        }
+                    },
+                    floatingActionButton = {
+                        if (appPagerState.currentPage < 3) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                FloatingActionButton(
+                                    onClick = { formViewModel.onEvent(FormEvent.ClearForm) },
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = "New Form")
+                                }
+                                FloatingActionButton(
+                                    onClick = { formViewModel.onEvent(FormEvent.SaveOrUpdateForm(context)) },
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ) {
+                                    Icon(Icons.Default.Save, contentDescription = "Save Form")
+                                }
+                            }
+                        }
+                    }
                 ) { paddingValues ->
                     Box(modifier = Modifier.fillMaxSize()) {
                         HorizontalPager(
@@ -95,7 +149,6 @@ class MainActivity : ComponentActivity() {
                                     .padding(paddingValues)
                                     .verticalScroll(rememberScrollState())
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .padding(top = 5.dp, bottom = 135.dp)
 
                             when (page) {
                                 0 ->
@@ -103,13 +156,6 @@ class MainActivity : ComponentActivity() {
                                         PickupScreen(
                                             state = pickupState,
                                             onEvent = formViewModel::onEvent,
-                                            customTextFieldColors = TextFieldDefaults.colors(
-                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                                cursorColor = MaterialTheme.colorScheme.onBackground,
-                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
-                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                            ),
                                             runNumber = pickupState.run,
                                             onRunNumberChange = { newRun ->
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
@@ -123,13 +169,6 @@ class MainActivity : ComponentActivity() {
                                         DropoffScreen(
                                             state = dropoffState,
                                             onEvent = formViewModel::onEvent,
-                                            customTextFieldColors = TextFieldDefaults.colors(
-                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                                cursorColor = MaterialTheme.colorScheme.onBackground,
-                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
-                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                            ),
                                             runNumber = dropoffState.run,
                                             onRunNumberChange = { newRun ->
                                                 formViewModel.onEvent(FormEvent.UpdateField(FormSection.PICKUP, FormFieldType.RUN, newRun))
@@ -138,20 +177,13 @@ class MainActivity : ComponentActivity() {
                                             }
                                         )
                                     }
-                                2 -> // Added for Stations
+                                2 ->
                                     Column(modifier = formPageModifier) {
                                         val stationsItemSections by formViewModel.stationsItemSections.collectAsState()
                                         StationsScreen(
                                             stationsState = stationsState,
                                             stationsItemSections = stationsItemSections,
                                             onEvent = formViewModel::onEvent,
-                                            customTextFieldColors = TextFieldDefaults.colors(
-                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                                cursorColor = MaterialTheme.colorScheme.onBackground,
-                                                focusedLabelColor = MaterialTheme.colorScheme.onBackground,
-                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                                            ),
                                             onUpdateItemSection = { index, section ->
                                                 formViewModel.onEvent(FormEvent.UpdateStationsItemSection(index, section))
                                             },
@@ -163,7 +195,8 @@ class MainActivity : ComponentActivity() {
                                             }
                                         )
                                     }
-                                3 -> // Adjusted index for SavedFormsScreen
+
+                                3 ->
                                     Box(modifier = Modifier.padding(paddingValues)) {
                                         SavedFormsScreen(
                                             formViewModel = formViewModel,
@@ -177,31 +210,10 @@ class MainActivity : ComponentActivity() {
                                     }
                             }
                         }
-
-                        Column(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .navigationBarsPadding()
-                                    .padding(bottom = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            FabRow(
-                                onNewEntry = { formViewModel.onEvent(FormEvent.ClearForm) },
-                                onSaveEntry = { formViewModel.onEvent(FormEvent.SaveOrUpdateForm(context)) },
-                                onNavigateToSaved = {
-                                    coroutineScope.launch { appPagerState.animateScrollToPage(3) } // Adjusted index for SavedFormsScreen
-                                },
-                                modifier = Modifier.padding(bottom = 16.dp),
-                            )
-                            DotsIndicator(
-                                pageCount = appPagerState.pageCount,
-                                selectedIndex = appPagerState.currentPage,
-                            )
-                        }
                     }
                 }
             }
         }
     }
 }
+

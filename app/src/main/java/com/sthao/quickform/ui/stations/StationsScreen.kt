@@ -1,54 +1,57 @@
 package com.sthao.quickform.ui.stations
 
+import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import android.net.Uri
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.activity.compose.BackHandler
+import com.sthao.quickform.ui.components.MultiImagePicker
+import com.sthao.quickform.ui.components.SignatureBox
+import com.sthao.quickform.ui.theme.stationsForm
 import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
 import com.sthao.quickform.ui.viewmodel.FormSection
 import com.sthao.quickform.ui.viewmodel.StationsUiState
-import com.sthao.quickform.ui.components.MultiImagePicker
-import com.sthao.quickform.ui.components.SignatureBox
-import com.sthao.quickform.ui.theme.stationsForm
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,7 +62,6 @@ fun StationsScreen(
     stationsState: StationsUiState,
     stationsItemSections: List<StationsItemSection>,
     onEvent: (FormEvent) -> Unit,
-    customTextFieldColors: TextFieldColors,
     onUpdateItemSection: (Int, StationsItemSection) -> Unit,
     onAddItemSection: () -> Unit,
     onRemoveItemSections: (List<Int>) -> Unit,
@@ -68,9 +70,6 @@ fun StationsScreen(
     var dateDialogOpen by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
     val dateFormat = remember { SimpleDateFormat("MMM-dd-yyyy", Locale.getDefault()) }
-    
-    // Manage item sections
-    val itemSections = remember { mutableStateListOf(StationsItemSection()) }
     
     // Manage selected sections for deletion
     var selectedSections by remember { mutableStateOf(setOf<Int>()) }
@@ -82,40 +81,32 @@ fun StationsScreen(
         isInSelectionMode = false
     }
     
-    Card(
-        modifier =
-            Modifier
-                .fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.stationsForm),
-        elevation = CardDefaults.cardElevation(4.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            // Header text for the form.
-            Text(
-                "Stations",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-            Spacer(Modifier.height(16.dp))
+        // Section: Basic Info
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "General Information",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-            // Interaction source to detect when the read-only date field is clicked.
-            val interactionSource = remember { MutableInteractionSource() }
-            val isPressed by interactionSource.collectIsPressedAsState()
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
 
-            // Opens the date dialog when the text field is pressed.
-            LaunchedEffect(isPressed) {
-                if (isPressed) {
-                    dateDialogOpen = true
+                LaunchedEffect(isPressed) {
+                    if (isPressed) {
+                        dateDialogOpen = true
+                    }
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .border(BorderStroke(1.5.dp, Color.Gray), shape = RoundedCornerShape(8.dp))
-                    .padding(8.dp)
-            ) {
-                // A read-only text field to display the selected date.
                 OutlinedTextField(
                     value = stationsState.date,
                     onValueChange = {},
@@ -123,9 +114,9 @@ fun StationsScreen(
                     readOnly = true,
                     interactionSource = interactionSource,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
-                // The actual DatePickerDialog composable.
+                
                 if (dateDialogOpen) {
                     DatePickerDialog(
                         onDismissRequest = { dateDialogOpen = false },
@@ -144,178 +135,129 @@ fun StationsScreen(
                         DatePicker(state = datePickerState)
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+
                 OutlinedTextField(
                     value = stationsState.driverName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.DRIVER_NAME, it)) },
                     label = { Text("Driver Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = stationsState.driverNumber,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.DRIVER_NUMBER, it)) },
                     label = { Text("Driver Number") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
-                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = stationsState.facilityName,
                     onValueChange = { onEvent(FormEvent.UpdateField(FormSection.STATIONS, FormFieldType.FACILITY_NAME, it)) },
                     label = { Text("Facility Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = customTextFieldColors,
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
-            Spacer(Modifier.height(16.dp))
+        }
 
-            // Render item sections
-            stationsItemSections.forEachIndexed { index, section ->
-                ItemSection(
-                    section = section,
-                    index = index,
-                    isSelected = isInSelectionMode && selectedSections.contains(index),
-                    customTextFieldColors = customTextFieldColors,
-                    onRunNumberChange = { value -> 
-                        onUpdateItemSection(index, section.copy(sectionRunNumber = value))
-                    },
-                    onTotesChange = { value -> 
-                        onUpdateItemSection(index, section.copy(totes = value))
-                    },
-                    onAddOnsChange = { value -> 
-                        onUpdateItemSection(index, section.copy(addOns = value))
-                    },
-                    onExtraChange = { value -> 
-                        onUpdateItemSection(index, section.copy(extra = value))
-                    },
-                    onPrintNameChange = { value ->
-                        onUpdateItemSection(index, section.copy(printName = value))
-                    },
-                    onSignatureChange = { bitmap ->
-                        onUpdateItemSection(index, section.copy(signature = bitmap))
-                    },
-                    onImageAdded = { uri ->
-                        val updatedImages = section.images + uri
-                        onUpdateItemSection(index, section.copy(images = updatedImages))
-                    },
-                    onImageRemoved = { uri ->
-                        val updatedImages = section.images - uri
-                        onUpdateItemSection(index, section.copy(images = updatedImages))
-                    },
-                    onLongClick = {
-                        if (!isInSelectionMode) {
-                            isInSelectionMode = true
-                            selectedSections = setOf(index)
-                        } else {
-                            selectedSections = if (selectedSections.contains(index)) {
-                                selectedSections - index
-                            } else {
-                                selectedSections + index
-                            }
-                        }
-                    },
-                    onClick = {
-                        if (isInSelectionMode) {
-                            selectedSections = if (selectedSections.contains(index)) {
-                                selectedSections - index
-                            } else {
-                                selectedSections + index
-                            }
-                            
-                            // Exit selection mode if no items are selected
-                            if (selectedSections.isEmpty()) {
-                                isInSelectionMode = false
-                            }
-                        }
-                    }
-                )
-                
-                // Add separator and button after each section except the last one
-                if (index < itemSections.size - 1) {
-                    HorizontalDivider(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        thickness = 1.dp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                    )
-                }
-            }
-            
-            // Add separator and button after the last section
-            HorizontalDivider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                thickness = 1.dp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-            )
-            
-            // Action bar for selected items
-            if (isInSelectionMode) {
+        // Action bar for selected items
+        if (isInSelectionMode) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("${selectedSections.size} selected")
+                    Text("${selectedSections.size} selected", style = MaterialTheme.typography.titleSmall)
                     
                     IconButton(
                         onClick = {
-                            // Delete selected sections (in reverse order to maintain indices)
                             onRemoveItemSections(selectedSections.sortedDescending())
-                            
-                            // Reset selection
                             selectedSections = emptySet()
                             isInSelectionMode = false
                         }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Selected"
-                        )
+                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Selected")
                     }
                 }
-                
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-                )
             }
-            
-            // Add section button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .border(
-                            BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(50)
-                        )
-                        .background(MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(50))
-                        .clickable {
-                            onAddItemSection()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Section",
-                        tint = Color.White
-                    )
+        }
+
+        // Render item sections
+        stationsItemSections.forEachIndexed { index, section ->
+            ItemSection(
+                section = section,
+                index = index,
+                isSelected = isInSelectionMode && selectedSections.contains(index),
+                onRunNumberChange = { value -> 
+                    onUpdateItemSection(index, section.copy(sectionRunNumber = value))
+                },
+                onTotesChange = { value -> 
+                    onUpdateItemSection(index, section.copy(totes = value))
+                },
+                onAddOnsChange = { value -> 
+                    onUpdateItemSection(index, section.copy(addOns = value))
+                },
+                onExtraChange = { value -> 
+                    onUpdateItemSection(index, section.copy(extra = value))
+                },
+                onPrintNameChange = { value ->
+                    onUpdateItemSection(index, section.copy(printName = value))
+                },
+                onSignatureChange = { bitmap ->
+                    onUpdateItemSection(index, section.copy(signature = bitmap))
+                },
+                onImageAdded = { uri ->
+                    val updatedImages = section.images + uri
+                    onUpdateItemSection(index, section.copy(images = updatedImages))
+                },
+                onImageRemoved = { uri ->
+                    val updatedImages = section.images - uri
+                    onUpdateItemSection(index, section.copy(images = updatedImages))
+                },
+                onLongClick = {
+                    if (!isInSelectionMode) {
+                        isInSelectionMode = true
+                        selectedSections = setOf(index)
+                    } else {
+                        selectedSections = if (selectedSections.contains(index)) {
+                            selectedSections - index
+                        } else {
+                            selectedSections + index
+                        }
+                    }
+                },
+                onClick = {
+                    if (isInSelectionMode) {
+                        selectedSections = if (selectedSections.contains(index)) {
+                            selectedSections - index
+                        } else {
+                            selectedSections + index
+                        }
+                        
+                        if (selectedSections.isEmpty()) {
+                            isInSelectionMode = false
+                        }
+                    }
                 }
-            }
+            )
+        }
+        
+        // Add section button
+        Button(
+            onClick = onAddItemSection,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Add Station Section")
         }
     }
 }
@@ -326,7 +268,6 @@ fun ItemSection(
     section: StationsItemSection,
     index: Int,
     isSelected: Boolean = false,
-    customTextFieldColors: TextFieldColors,
     onRunNumberChange: (String) -> Unit,
     onTotesChange: (String) -> Unit,
     onAddOnsChange: (String) -> Unit,
@@ -338,118 +279,116 @@ fun ItemSection(
     onLongClick: () -> Unit = {},
     onClick: () -> Unit = {}
 ) {
-    Text(
-        text = "Items ${index + 1}",
-        style = MaterialTheme.typography.titleLarge,
-        textDecoration = TextDecoration.Underline,
-        fontWeight = FontWeight.SemiBold,
-    )
-    Spacer(Modifier.height(8.dp))
-
-    Column(
+    Card(
         modifier = Modifier
-            .border(
-                BorderStroke(1.5.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(8.dp)
+            .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
-            )
-            .then(if (isSelected) Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.primary)) else Modifier)
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
+                             else MaterialTheme.colorScheme.stationsForm
+        ),
+        border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        elevation = CardDefaults.cardElevation(if (isSelected) 8.dp else 2.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Station Items ${index + 1}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+
             OutlinedTextField(
                 value = section.sectionRunNumber,
                 onValueChange = onRunNumberChange,
                 label = { Text("Run #, Station") },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = customTextFieldColors,
+                shape = RoundedCornerShape(12.dp)
             )
-        }
-        Spacer(Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("Totes:", modifier = Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Totes:", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = section.totes,
+                    onValueChange = { if (it.all(Char::isDigit)) onUpdateTotes(it, onTotesChange) },
+                    label = { Text("Qty") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Add-ons:", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = section.addOns,
+                    onValueChange = { if (it.all(Char::isDigit)) onUpdateAddOns(it, onAddOnsChange) },
+                    label = { Text("Qty") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Extra:", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                OutlinedTextField(
+                    value = section.extra,
+                    onValueChange = { if (it.all(Char::isDigit)) onUpdateExtra(it, onExtraChange) },
+                    label = { Text("Qty") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+            
+            MultiImagePicker(
+                images = section.images,
+                onImageAdded = onImageAdded,
+                onImageRemoved = onImageRemoved,
+                modifier = Modifier.fillMaxWidth()
+            )
+            
             OutlinedTextField(
-                value = section.totes,
-                onValueChange = { if (it.all(Char::isDigit)) onTotesChange(it) },
-                label = { Text("Quantity") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = customTextFieldColors,
+                value = section.printName,
+                onValueChange = onPrintNameChange,
+                label = { Text("Print Name") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            SignatureBox(
+                label = "Signature",
+                bitmap = section.signature,
+                onBitmapChange = onSignatureChange,
             )
         }
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("Add-ons:", modifier = Modifier.weight(1f))
-            OutlinedTextField(
-                value = section.addOns,
-                onValueChange = { if (it.all(Char::isDigit)) onAddOnsChange(it) },
-                label = { Text("Quantity") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = customTextFieldColors,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("Extra:", modifier = Modifier.weight(1f))
-            OutlinedTextField(
-                value = section.extra,
-                onValueChange = { if (it.all(Char::isDigit)) onExtraChange(it) },
-                label = { Text("Quantity") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = customTextFieldColors,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        
-        // Attached Images
-        MultiImagePicker(
-            images = section.images,
-            onImageAdded = onImageAdded,
-            onImageRemoved = onImageRemoved,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(8.dp))
-        
-        // Print Name
-        OutlinedTextField(
-            value = section.printName,
-            onValueChange = onPrintNameChange,
-            label = { Text("Print Name") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = customTextFieldColors,
-        )
-        Spacer(Modifier.height(8.dp))
-
-        // Signature Box
-        SignatureBox(
-            label = "Signature",
-            bitmap = section.signature,
-            onBitmapChange = onSignatureChange,
-        )
     }
+}
+
+private fun onUpdateTotes(it: String, onTotesChange: (String) -> Unit) {
+    onTotesChange(it)
+}
+
+private fun onUpdateAddOns(it: String, onAddOnsChange: (String) -> Unit) {
+    onAddOnsChange(it)
+}
+
+private fun onUpdateExtra(it: String, onExtraChange: (String) -> Unit) {
+    onExtraChange(it)
 }

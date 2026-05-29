@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
@@ -44,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -70,6 +72,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -123,7 +127,7 @@ private fun rememberSignatureCanvasState(initialBitmap: Bitmap?): SignatureCanva
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBanner() {
-    TopAppBar(
+    androidx.compose.material3.CenterAlignedTopAppBar(
         navigationIcon = {
             Image(
                 painter = painterResource(id = R.drawable.quickform),
@@ -138,16 +142,17 @@ fun TopBanner() {
             Text(
                 "Confirmation Form",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 12.dp),
+                fontWeight = FontWeight.Bold,
             )
         },
         colors =
-            TopAppBarDefaults.topAppBarColors(
+            TopAppBarDefaults.centerAlignedTopAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 titleContentColor = MaterialTheme.colorScheme.onSurface,
             ),
     )
 }
+
 
 @Composable
 fun DotsIndicator(
@@ -499,4 +504,59 @@ fun SelectionAppBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onSecondary,
         ),
     )
+}
+
+@Composable
+fun ItemRow(
+    label: String,
+    bags: String,
+    quantity: String,
+    onUpdate: (String?, String?) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        OutlinedTextField(
+            value = bags,
+            onValueChange = { if (it.all(Char::isDigit)) onUpdate(it, null) },
+            label = { Text("Bags") },
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(12.dp)
+        )
+        OutlinedTextField(
+            value = quantity,
+            onValueChange = { if (it.all(Char::isDigit)) onUpdate(null, it) },
+            label = { Text("Qty") },
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
+}
+
+@Composable
+fun QuantityRow(
+    label: String,
+    quantity: String,
+    onUpdate: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        OutlinedTextField(
+            value = quantity,
+            onValueChange = { if (it.all(Char::isDigit)) onUpdate(it) },
+            label = { Text("Quantity") },
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
 }
