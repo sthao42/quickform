@@ -32,7 +32,7 @@ import com.sthao.quickform.ui.components.ItemRow
 import com.sthao.quickform.ui.components.MultiImagePicker
 import com.sthao.quickform.ui.components.QuantityRow
 import com.sthao.quickform.ui.components.SignatureBox
-import com.sthao.quickform.ui.theme.dropOffForm
+import com.sthao.quickform.ui.theme.extendedColors
 import com.sthao.quickform.ui.viewmodel.DropoffUiState
 import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
@@ -148,7 +148,7 @@ fun DropoffScreen(
         // Section: Items
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.dropOffForm),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.extendedColors.dropOffForm),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(

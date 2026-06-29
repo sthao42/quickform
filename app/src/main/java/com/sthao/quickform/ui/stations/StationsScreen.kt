@@ -47,7 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sthao.quickform.ui.components.MultiImagePicker
 import com.sthao.quickform.ui.components.SignatureBox
-import com.sthao.quickform.ui.theme.stationsForm
+import com.sthao.quickform.ui.theme.extendedColors
 import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
 import com.sthao.quickform.ui.viewmodel.FormSection
@@ -289,7 +289,7 @@ fun ItemSection(
             ),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                             else MaterialTheme.colorScheme.stationsForm,
+                             else MaterialTheme.extendedColors.stationsForm,
         ),
         border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(if (isSelected) 8.dp else 2.dp),

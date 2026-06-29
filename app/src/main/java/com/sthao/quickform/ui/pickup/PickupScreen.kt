@@ -32,7 +32,7 @@ import com.sthao.quickform.ui.components.ItemRow
 import com.sthao.quickform.ui.components.MultiImagePicker
 import com.sthao.quickform.ui.components.QuantityRow
 import com.sthao.quickform.ui.components.SignatureBox
-import com.sthao.quickform.ui.theme.pickupForm
+import com.sthao.quickform.ui.theme.extendedColors
 import com.sthao.quickform.ui.viewmodel.FormEvent
 import com.sthao.quickform.ui.viewmodel.FormFieldType
 import com.sthao.quickform.ui.viewmodel.FormSection
@@ -150,7 +150,7 @@ fun PickupScreen(
         // Section: Items
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.pickupForm),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.extendedColors.pickupForm),
         ) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
