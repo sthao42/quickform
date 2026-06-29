@@ -18,7 +18,7 @@ import androidx.room.PrimaryKey
         Index(value = ["pickupFacilityName"]),
         Index(value = ["dropoffFacilityName"]),
         Index(value = ["stationsFacilityName"]), // Added for Stations
-    ]
+    ],
 )
 data class FormEntry(
     @PrimaryKey(autoGenerate = true)

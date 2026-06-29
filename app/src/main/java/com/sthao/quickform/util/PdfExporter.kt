@@ -104,7 +104,7 @@ fun exportMultipleFormsAsPdf(context: Context, formsWithIds: List<Pair<FormEntry
         }
 
         val timestamp = SimpleDateFormat(DATE_FORMAT_FILENAME, Locale.US).format(Date())
-        val fileName = "Exported_Forms_${timestamp}.pdf"
+        val fileName = "Exported_Forms_$timestamp.pdf"
 
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
@@ -156,7 +156,7 @@ private class PdfLayoutManager(private val document: PdfDocument) {
     }
 
     fun prepareToDraw(spaceNeeded: Float) {
-        if (yPos + spaceNeeded > (PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN)) {
+        if ((yPos + spaceNeeded) > (PdfDimens.PAGE_HEIGHT - PdfDimens.MARGIN)) {
             startNewPage()
         }
     }
@@ -174,79 +174,87 @@ private class PdfLayoutManager(private val document: PdfDocument) {
  * Helper function to check if pickup section has any meaningful data.
  */
 private fun hasPickupData(form: FormEntry): Boolean {
-    return !form.pickupDate.isNullOrBlank() ||
-           !form.pickupDriverName.isNullOrBlank() ||
-           !form.pickupDriverNumber.isNullOrBlank() ||
-           !form.pickupFacilityName.isNullOrBlank() ||
-           !form.pickupFrozenBags.isNullOrBlank() ||
-           !form.pickupFrozenQuantity.isNullOrBlank() ||
-           !form.pickupRefrigeratedBags.isNullOrBlank() ||
-           !form.pickupRefrigeratedQuantity.isNullOrBlank() ||
-           !form.pickupRoomTempBags.isNullOrBlank() ||
-           !form.pickupRoomTempQuantity.isNullOrBlank() ||
-           !form.pickupBoxesQuantity.isNullOrBlank() ||
-           !form.pickupColoredBagsQuantity.isNullOrBlank() ||
-           !form.pickupMailsQuantity.isNullOrBlank() ||
-           !form.pickupMoneyBagsQuantity.isNullOrBlank() ||
-           !form.pickupOthersQuantity.isNullOrBlank() ||
-           !form.pickupNotes.isNullOrBlank() ||
-           !form.pickupAdditionalNotes.isNullOrBlank() ||
-           !form.pickupPrintSignatureOne.isNullOrBlank() ||
-           !form.pickupPrintSignatureTwo.isNullOrBlank() ||
-           form.pickupSignatureOne != null ||
-           form.pickupSignatureTwo != null
+    return (
+        (!form.pickupDate.isNullOrBlank()) ||
+            (!form.pickupDriverName.isNullOrBlank()) ||
+            (!form.pickupDriverNumber.isNullOrBlank()) ||
+            (!form.pickupFacilityName.isNullOrBlank()) ||
+            (!form.pickupFrozenBags.isNullOrBlank()) ||
+            (!form.pickupFrozenQuantity.isNullOrBlank()) ||
+            (!form.pickupRefrigeratedBags.isNullOrBlank()) ||
+            (!form.pickupRefrigeratedQuantity.isNullOrBlank()) ||
+            (!form.pickupRoomTempBags.isNullOrBlank()) ||
+            (!form.pickupRoomTempQuantity.isNullOrBlank()) ||
+            (!form.pickupBoxesQuantity.isNullOrBlank()) ||
+            (!form.pickupColoredBagsQuantity.isNullOrBlank()) ||
+            (!form.pickupMailsQuantity.isNullOrBlank()) ||
+            (!form.pickupMoneyBagsQuantity.isNullOrBlank()) ||
+            (!form.pickupOthersQuantity.isNullOrBlank()) ||
+            (!form.pickupNotes.isNullOrBlank()) ||
+            (!form.pickupAdditionalNotes.isNullOrBlank()) ||
+            (!form.pickupPrintSignatureOne.isNullOrBlank()) ||
+            (!form.pickupPrintSignatureTwo.isNullOrBlank()) ||
+            (form.pickupSignatureOne != null) ||
+            (form.pickupSignatureTwo != null)
+    )
 }
 
 /**
  * Helper function to check if dropoff section has any meaningful data.
  */
 private fun hasDropoffData(form: FormEntry): Boolean {
-    return !form.dropoffDate.isNullOrBlank() ||
-           !form.dropoffDriverName.isNullOrBlank() ||
-           !form.dropoffDriverNumber.isNullOrBlank() ||
-           !form.dropoffFacilityName.isNullOrBlank() ||
-           !form.dropoffFrozenBags.isNullOrBlank() ||
-           !form.dropoffFrozenQuantity.isNullOrBlank() ||
-           !form.dropoffRefrigeratedBags.isNullOrBlank() ||
-           !form.dropoffRefrigeratedQuantity.isNullOrBlank() ||
-           !form.dropoffRoomTempBags.isNullOrBlank() ||
-           !form.dropoffRoomTempQuantity.isNullOrBlank() ||
-           !form.dropoffBoxesQuantity.isNullOrBlank() ||
-           !form.dropoffColoredBagsQuantity.isNullOrBlank() ||
-           !form.dropoffMailsQuantity.isNullOrBlank() ||
-           !form.dropoffMoneyBagsQuantity.isNullOrBlank() ||
-           !form.dropoffOthersQuantity.isNullOrBlank() ||
-           !form.dropoffNotes.isNullOrBlank() ||
-           !form.dropoffAdditionalNotes.isNullOrBlank() ||
-           !form.dropoffPrintSignatureOne.isNullOrBlank() ||
-           !form.dropoffPrintSignatureTwo.isNullOrBlank() ||
-           form.dropoffSignatureOne != null ||
-           form.dropoffSignatureTwo != null
+    return (
+        (!form.dropoffDate.isNullOrBlank()) ||
+            (!form.dropoffDriverName.isNullOrBlank()) ||
+            (!form.dropoffDriverNumber.isNullOrBlank()) ||
+            (!form.dropoffFacilityName.isNullOrBlank()) ||
+            (!form.dropoffFrozenBags.isNullOrBlank()) ||
+            (!form.dropoffFrozenQuantity.isNullOrBlank()) ||
+            (!form.dropoffRefrigeratedBags.isNullOrBlank()) ||
+            (!form.dropoffRefrigeratedQuantity.isNullOrBlank()) ||
+            (!form.dropoffRoomTempBags.isNullOrBlank()) ||
+            (!form.dropoffRoomTempQuantity.isNullOrBlank()) ||
+            (!form.dropoffBoxesQuantity.isNullOrBlank()) ||
+            (!form.dropoffColoredBagsQuantity.isNullOrBlank()) ||
+            (!form.dropoffMailsQuantity.isNullOrBlank()) ||
+            (!form.dropoffMoneyBagsQuantity.isNullOrBlank()) ||
+            (!form.dropoffOthersQuantity.isNullOrBlank()) ||
+            (!form.dropoffNotes.isNullOrBlank()) ||
+            (!form.dropoffAdditionalNotes.isNullOrBlank()) ||
+            (!form.dropoffPrintSignatureOne.isNullOrBlank()) ||
+            (!form.dropoffPrintSignatureTwo.isNullOrBlank()) ||
+            (form.dropoffSignatureOne != null) ||
+            (form.dropoffSignatureTwo != null)
+    )
 }
 
 /**
  * Helper function to check if stations section has any meaningful data.
  */
 private fun hasStationsData(form: FormEntry, sections: List<StationsItemSectionEntity>): Boolean {
-    val hasFormData = !form.stationsDate.isNullOrBlank() ||
-                     !form.stationsDriverName.isNullOrBlank() ||
-                     !form.stationsDriverNumber.isNullOrBlank() ||
-                     !form.stationsFacilityName.isNullOrBlank() ||
-                     !form.stationsTotes.isNullOrBlank() ||
-                     !form.stationsAddOns.isNullOrBlank() ||
-                     !form.stationsExtra.isNullOrBlank() ||
-                     !form.stationsPrintSignatureOne.isNullOrBlank() ||
-                     form.stationsSignatureOne != null
-    
-    val hasSectionData = sections.isNotEmpty() && sections.any { section ->
-        section.sectionRunNumber.isNotBlank() ||
-        section.totes.isNotBlank() ||
-        section.addOns.isNotBlank() ||
-        section.extra.isNotBlank() ||
-        section.printName.isNotBlank() ||
-        section.signature != null
-    }
-    
+    val hasFormData = (
+        !form.stationsDate.isNullOrBlank() ||
+            !form.stationsDriverName.isNullOrBlank() ||
+            !form.stationsDriverNumber.isNullOrBlank() ||
+            !form.stationsFacilityName.isNullOrBlank() ||
+            !form.stationsTotes.isNullOrBlank() ||
+            !form.stationsAddOns.isNullOrBlank() ||
+            !form.stationsExtra.isNullOrBlank() ||
+            !form.stationsPrintSignatureOne.isNullOrBlank() ||
+            form.stationsSignatureOne != null
+    )
+
+    val hasSectionData = (
+        sections.isNotEmpty() && sections.any { section ->
+            section.sectionRunNumber.isNotBlank() ||
+                section.totes.isNotBlank() ||
+                section.addOns.isNotBlank() ||
+                section.extra.isNotBlank() ||
+                section.printName.isNotBlank() ||
+                section.signature != null
+        }
+    )
+
     return hasFormData || hasSectionData
 }
 
@@ -418,7 +426,7 @@ private fun drawMiscItemDetails(layoutManager: PdfLayoutManager, form: FormEntry
         layoutManager.prepareToDraw(PdfDimens.LINE_SPACING)
         layoutManager.draw { canvas ->
             // Draw label
-            canvas.drawText("${label}:", PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.BODY_PAINT)
+            canvas.drawText("$label:", PdfDimens.MARGIN + 10, layoutManager.yPos, PdfDimens.BODY_PAINT)
             // Draw value at the aligned position
             canvas.drawText((value ?: "").ifBlank { DEFAULT_QUANTITY }, valueXPos, layoutManager.yPos, PdfDimens.BODY_PAINT)
         }
@@ -587,7 +595,7 @@ private fun drawStationsItemSection(layoutManager: PdfLayoutManager, sectionNumb
     val itemsData = listOf(
         "Totes" to section.totes,
         "Add-ons" to section.addOns,
-        "Extra" to section.extra
+        "Extra" to section.extra,
     )
     
     itemsData.forEach { (name, value) ->

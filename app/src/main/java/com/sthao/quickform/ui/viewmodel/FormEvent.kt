@@ -41,7 +41,7 @@ sealed class FormEvent {
     data class UpdateField(
         val section: FormSection,
         val fieldType: FormFieldType,
-        val value: String
+        val value: String,
     ) : FormEvent()
     
     data class UpdateSignature(

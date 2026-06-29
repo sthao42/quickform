@@ -278,7 +278,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun getFullFormsByIds(ids: Set<Long>): List<FormEntryWithImagesAndSections> {
-        return repository.getFormsWithImagesByIds(ids.toList())
+        return repository.getFormsWithImagesAndSectionsByIds(ids.toList())
     }
 
     fun getFormWithSectionsById(id: Long): Flow<FormEntryWithImagesAndSections> {
@@ -448,10 +448,9 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
         val dropoffSignatureOneBitmap = form.dropoffSignatureOne?.let { byteArrayToBitmap(it) }
         val dropoffSignatureTwoBitmap = form.dropoffSignatureTwo?.let { byteArrayToBitmap(it) }
 
-        // Helper function to convert images
         fun convertImages(imageType: String, prefix: String): List<Uri> {
             return formWithSections.images.asSequence()
-                .filter { it.imageType == imageType && it.sectionIndex == -1 }
+                .filter { (it.imageType == imageType) && (it.sectionIndex == -1) }
                 .mapNotNull { byteArrayToUri(context, it.imageData, "${prefix}_${it.id}${Constants.PNG_EXTENSION}") }
                 .toList()
         }
@@ -485,7 +484,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             printSignatureTwo = form.pickupPrintSignatureTwo ?: "",
             signatureOne = pickupSignatureOneBitmap,
             signatureTwo = pickupSignatureTwoBitmap,
-            images = pickupImageUris
+            images = pickupImageUris,
         )
 
         _dropoffState.value = DropoffUiState(
@@ -511,7 +510,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             printSignatureTwo = form.dropoffPrintSignatureTwo ?: "",
             signatureOne = dropoffSignatureOneBitmap,
             signatureTwo = dropoffSignatureTwoBitmap,
-            images = dropoffImageUris
+            images = dropoffImageUris,
         )
 
         // Load Stations basic fields
@@ -521,7 +520,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             driverName = form.stationsDriverName ?: "",
             driverNumber = form.stationsDriverNumber ?: "",
             facilityName = form.stationsFacilityName ?: "",
-            images = stationsImageUris
+            images = stationsImageUris,
         )
 
         // Load Stations item sections
@@ -530,7 +529,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
             
             // Get images for this section
             val sectionImages = formWithSections.images.asSequence()
-                .filter { it.imageType == Constants.IMAGE_TYPE_STATIONS && it.sectionIndex == sectionEntity.sectionIndex }
+                .filter { (it.imageType == Constants.IMAGE_TYPE_STATIONS) && (it.sectionIndex == sectionEntity.sectionIndex) }
                 .mapNotNull { byteArrayToUri(context, it.imageData, "stations_${it.id}_section_${sectionEntity.sectionIndex}${Constants.PNG_EXTENSION}") }
                 .toList()
             
@@ -542,7 +541,7 @@ class FormViewModel(application: Application) : AndroidViewModel(application) {
                 extra = sectionEntity.extra,
                 printName = sectionEntity.printName,
                 signature = signatureBitmap,
-                images = sectionImages
+                images = sectionImages,
             )
         }
         _stationsItemSections.value = itemSections

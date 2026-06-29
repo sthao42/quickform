@@ -16,19 +16,9 @@ class FormRepository(private val formDao: FormDao) {
         return formDao.getFormWithImagesAndSectionsById(id)
     }
 
-    // Gets a list of complete form entries with their images from a list of IDs.
-    suspend fun getFormsWithImagesByIds(ids: List<Long>): List<FormEntryWithImagesAndSections> {
-        return formDao.getFormsWithImagesByIds(ids)
-    }
-
     // Gets a list of complete form entries with their images and sections from a list of IDs.
     suspend fun getFormsWithImagesAndSectionsByIds(ids: List<Long>): List<FormEntryWithImagesAndSections> {
         return formDao.getFormsWithImagesAndSectionsByIds(ids)
-    }
-
-    // Saves a form entry and its associated images in a single transaction.
-    suspend fun saveFormWithImages(formEntry: FormEntry, images: List<FormImage>) {
-        formDao.saveFormWithImages(formEntry, images)
     }
 
     // Saves a form entry, its associated images, and stations item sections in a single transaction.

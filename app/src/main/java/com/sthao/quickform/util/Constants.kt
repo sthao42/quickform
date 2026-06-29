@@ -37,7 +37,6 @@ object Constants {
     const val IMAGE_PREVIEW_SIZE_DP = 100
     const val DIALOG_CANVAS_HEIGHT_DP = 200
     const val LOGO_HEIGHT_DP = 30
-    const val FAB_SIZE_DP = 64
     
     // StateFlow configuration
     const val STATEFLOW_SUBSCRIPTION_TIMEOUT = 5000L

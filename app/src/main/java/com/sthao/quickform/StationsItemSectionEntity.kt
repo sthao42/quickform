@@ -16,7 +16,7 @@ import androidx.room.PrimaryKey
             parentColumns = ["id"],
             childColumns = ["formEntryId"],
             onDelete = ForeignKey.CASCADE,
-        )
+        ),
     ],
     indices = [
         Index(value = ["formEntryId"])

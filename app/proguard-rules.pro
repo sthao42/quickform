@@ -1,34 +1,46 @@
 # Add project specific ProGuard rules here.
 
-# Keep Room entities and DAOs
--keep class com.sthao.quickform.Form** { *; }
+# --- Room / Database Rules ---
+# Room uses reflection to instantiate entities and DAOs.
+-keep class com.sthao.quickform.FormEntry { *; }
+-keep class com.sthao.quickform.FormImage { *; }
+-keep class com.sthao.quickform.StationsItemSectionEntity { *; }
 -keep interface com.sthao.quickform.FormDao { *; }
+-keep class com.sthao.quickform.FormEntryWithImagesAndSections { *; }
+-keep class com.sthao.quickform.FormListItem { *; }
 
-# Keep data classes used in Compose
--keep class com.sthao.quickform.ui.viewmodel.** { *; }
+# --- UI / ViewModel Rules ---
+# Keep the Factory because it is often instantiated via reflection by the ViewModelProvider.
+-keep class com.sthao.quickform.ui.viewmodel.FormViewModelFactory { *; }
 
-# Keep Compose related classes
--keep class androidx.compose.** { *; }
--keep class androidx.lifecycle.** { *; }
+# Keep data class members in ViewModels to prevent issues if they are used in
+# generic operations or state restoration.
+-keepclassmembers class com.sthao.quickform.ui.viewmodel.** { *; }
 
-# Keep Coroutines
--keep class kotlinx.coroutines.** { *; }
+# --- Library Specific Rules ---
+# Note: Modern versions of Compose, Lifecycle, Coroutines, and Room
+# usually provide their own ProGuard rules bundled in the AAR.
+# We only add rules here if there are specific runtime issues.
 
-# Keep Coil image loading
--keep class coil.** { *; }
+# AndroidX / Compose / Lifecycle: Usually handled by library AAR rules.
+# If you encounter issues with ProGuard stripping essential components,
+# you can uncomment specific ones below, but avoiding '-keep class ...** { *; }'
+# is better for optimization.
 
-# Keep signature bitmap handling
--keep class android.graphics.Bitmap { *; }
--keep class android.graphics.Canvas { *; }
+# Coroutines: Bundled rules are usually sufficient.
+# -keepnames class kotlinx.coroutines.internal.MainDispatcherLoader { *; }
 
-# General Android optimizations
+# Coil: Bundled rules are usually sufficient.
+
+# --- General System / Platform Rules ---
+# Optimization settings
 -optimizationpasses 5
 -dontusemixedcaseclassnames
 -dontskipnonpubliclibraryclasses
 -dontpreverify
 -verbose
 
-# Keep serialization classes
+# Serialization
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
     private static final java.io.ObjectStreamField[] serialPersistentFields;
@@ -38,6 +50,6 @@
     java.lang.Object readResolve();
 }
 
-# Keep line numbers for debugging
--keepattributes SourceFile,LineNumberTable
+# Keep attributes for better stack traces in crash reports
+-keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod,Exceptions,AnnotationDefault,*Annotation*
 -renamesourcefileattribute SourceFile

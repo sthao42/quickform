@@ -61,7 +61,7 @@ fun SavedFormsScreen(
     // Manages the set of currently selected form IDs.
     var selectedIds by remember { mutableStateOf(emptySet<Long>()) }
     // Manages the visibility of the delete confirmation dialog.
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(value = false) }
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -78,7 +78,7 @@ fun SavedFormsScreen(
             },
             onDismiss = {
                 showDeleteConfirmDialog = false
-            }
+            },
         )
     }
 
@@ -172,7 +172,7 @@ fun SavedFormsScreen(
                         },
                         onLongClick = {
                             // Enters selection mode on long click.
-                            selectedIds = selectedIds + formListItem.id
+                            selectedIds += formListItem.id
                         }
                     )
                 }
@@ -262,17 +262,17 @@ private fun DeleteConfirmationDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = onConfirm
+                onClick = onConfirm,
             ) {
                 Text("Delete")
             }
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss
+                onClick = onDismiss,
             ) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }

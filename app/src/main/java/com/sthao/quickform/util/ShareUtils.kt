@@ -41,7 +41,7 @@ fun shareFormsAsPdf(
                 val pdfUri = FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider", // Authority must match AndroidManifest.xml
-                    pdfFile
+                    pdfFile,
                 )
 
                 // Step 3: Create an ACTION_SEND intent to share the PDF.

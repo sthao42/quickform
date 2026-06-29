@@ -11,12 +11,12 @@ data class FormEntryWithImagesAndSections(
     @Embedded val formEntry: FormEntry,
     @Relation(
         parentColumn = "id",
-        entityColumn = "formEntryId"
+        entityColumn = "formEntryId",
     )
     val images: List<FormImage>,
     @Relation(
         parentColumn = "id",
-        entityColumn = "formEntryId"
+        entityColumn = "formEntryId",
     )
     val stationsItemSections: List<StationsItemSectionEntity>
 )

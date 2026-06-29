@@ -16,13 +16,15 @@ import androidx.room.PrimaryKey
  */
 @Entity(
     tableName = "form_images",
-    foreignKeys = [ForeignKey(
-        entity = FormEntry::class,
-        parentColumns = ["id"],
-        childColumns = ["formEntryId"],
-        onDelete = ForeignKey.CASCADE // If a FormEntry is deleted, its images are also deleted.
-    )],
-    indices = [Index(value = ["formEntryId"])] // Index for faster queries
+    foreignKeys = [
+        ForeignKey(
+            entity = FormEntry::class,
+            parentColumns = ["id"],
+            childColumns = ["formEntryId"],
+            onDelete = ForeignKey.CASCADE, // If a FormEntry is deleted, its images are also deleted.
+        ),
+    ],
+    indices = [Index(value = ["formEntryId"])], // Index for faster queries
 )
 data class FormImage(
     @PrimaryKey(autoGenerate = true)
@@ -49,10 +51,10 @@ data class FormImage(
 
     override fun hashCode(): Int {
         var result = id.hashCode()
-        result = 31 * result + formEntryId.hashCode()
-        result = 31 * result + imageType.hashCode()
-        result = 31 * result + sectionIndex
-        result = 31 * result + imageData.contentHashCode()
+        result = (31 * result) + formEntryId.hashCode()
+        result = (31 * result) + imageType.hashCode()
+        result = (31 * result) + sectionIndex
+        result = (31 * result) + imageData.contentHashCode()
         return result
     }
 }

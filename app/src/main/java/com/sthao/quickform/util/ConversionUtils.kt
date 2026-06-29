@@ -157,3 +157,24 @@ fun byteArrayToUri(context: Context, byteArray: ByteArray, fileName: String): Ur
         null
     }
 }
+
+/**
+ * Clears all temporary files from the app's cache directories.
+ */
+fun clearAppCache(context: Context) {
+    try {
+        // Clear shared images
+        val imagesDir = File(context.cacheDir, CACHE_IMAGES_DIR)
+        if (imagesDir.exists()) {
+            imagesDir.listFiles()?.forEach { it.delete() }
+        }
+
+        // Clear shared PDFs
+        val pdfsDir = File(context.cacheDir, Constants.SHARED_PDFS_DIR)
+        if (pdfsDir.exists()) {
+            pdfsDir.listFiles()?.forEach { it.delete() }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}

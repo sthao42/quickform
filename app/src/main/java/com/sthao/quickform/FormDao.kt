@@ -28,23 +28,6 @@ interface FormDao {
 
 
     /**
-     * Saves a form entry and its images in a single, atomic transaction.
-     * This ensures data integrity by preventing partial saves.
-     */
-    @Transaction
-    suspend fun saveFormWithImages(formEntry: FormEntry, images: List<FormImage>) {
-        // Upsert the main FormEntry and get its ID.
-        val entryId = upsertFormEntry(formEntry)
-        // Delete any old images to ensure a clean slate.
-        deleteImagesForForm(entryId)
-        // Associate the new images with the FormEntry's ID and insert them.
-        if (images.isNotEmpty()) {
-            val imagesWithId = images.map { it.copy(formEntryId = entryId) }
-            upsertImages(imagesWithId)
-        }
-    }
-
-    /**
      * Saves a form entry, its images, and its stations item sections in a single, atomic transaction.
      * This ensures data integrity by preventing partial saves.
      */
@@ -73,10 +56,6 @@ interface FormDao {
     @Transaction
     @Query("SELECT * FROM form_entries WHERE id = :id")
     fun getFormWithImagesAndSectionsById(id: Long): Flow<FormEntryWithImagesAndSections>
-
-    @Transaction
-    @Query("SELECT * FROM form_entries WHERE id IN (:ids)")
-    suspend fun getFormsWithImagesByIds(ids: List<Long>): List<FormEntryWithImagesAndSections>
 
     @Transaction
     @Query("SELECT * FROM form_entries WHERE id IN (:ids)")

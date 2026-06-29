@@ -12,5 +12,5 @@ data class StationsItemSection(
     val extra: String = "",
     val printName: String = "",
     val signature: Bitmap? = null,
-    val images: List<Uri> = emptyList()
+    val images: List<Uri> = emptyList(),
 )

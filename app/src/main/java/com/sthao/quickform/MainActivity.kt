@@ -3,6 +3,7 @@ package com.sthao.quickform
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -39,6 +40,7 @@ import com.sthao.quickform.ui.viewmodel.FormFieldType
 import com.sthao.quickform.ui.viewmodel.FormSection
 import com.sthao.quickform.ui.viewmodel.FormViewModel
 import com.sthao.quickform.ui.viewmodel.FormViewModelFactory
+import com.sthao.quickform.util.clearAppCache
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -49,6 +51,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Enable edge-to-edge display for a modern Material 3 look.
+        enableEdgeToEdge()
+        
+        // Clear temporary cache on start to ensure no old data lingers.
+        clearAppCache(this)
+
         setContent {
             QuickFormTheme {
                 val pickupState by formViewModel.pickupState.collectAsState()
@@ -103,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.Storage, contentDescription = null) },
                                 label = { Text("Saved") },
                                 selected = appPagerState.currentPage == 3,
-                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(3) } }
+                                onClick = { coroutineScope.launch { appPagerState.animateScrollToPage(3) } },
                             )
                         }
                     },
@@ -126,7 +135,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                    }
+                    },
                 ) { paddingValues ->
                     Box(modifier = Modifier.fillMaxSize()) {
                         HorizontalPager(
@@ -186,23 +195,21 @@ class MainActivity : ComponentActivity() {
                                             onAddItemSection = {
                                                 formViewModel.onEvent(FormEvent.AddStationsItemSection)
                                             },
-                                            onRemoveItemSections = { indices ->
-                                                formViewModel.onEvent(FormEvent.RemoveStationsItemSections(indices))
-                                            }
-                                        )
+                                        ) { indices ->
+                                            formViewModel.onEvent(FormEvent.RemoveStationsItemSections(indices))
+                                        }
                                     }
 
                                 3 ->
                                     Box(modifier = Modifier.padding(paddingValues)) {
                                         SavedFormsScreen(
                                             formViewModel = formViewModel,
-                                            onEntryClick = { selectedForm ->
-                                                formViewModel.loadFormWithSections(selectedForm.formEntry.id)
-                                                coroutineScope.launch {
-                                                    appPagerState.animateScrollToPage(0)
-                                                }
-                                            },
-                                        )
+                                        ) { selectedForm ->
+                                            formViewModel.loadFormWithSections(selectedForm.formEntry.id)
+                                            coroutineScope.launch {
+                                                appPagerState.animateScrollToPage(0)
+                                            }
+                                        }
                                     }
                             }
                         }
